@@ -1,6 +1,6 @@
 {
   "name": "@gary-yez/go-admin-web",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "go-admin 公共管理端：系统页面、布局、请求封装和业务组件",
   "type": "module",
   "files": [
