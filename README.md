@@ -10,7 +10,7 @@ go-admin 的公共前端包，提供登录、布局、角色切换、系统页�
 
 ## 项目接入
 
-模板已经完成接入。在 `web` 下执行 `yarn install`、`yarn dev` 即可。当前依赖是 `file:../../go-admin-web`，无需访问尚未发布的 npm 包。
+模板已经完成接入。在 `web` 下执行 `yarn install`、`yarn dev` 即可。本地维护可使用同级源码联接；业务项目使用已发布的 npm 版本。
 
 ```ts
 import {createAdminApp} from '@gary-yez/go-admin-web'
@@ -82,7 +82,7 @@ optimizeDeps: {
         'element-plus/es/locale/lang/zh-cn', '@element-plus/icons-vue',
         'axios', 'nprogress', 'echarts', 'highlight.js', 'dayjs'],
 },
-resolve: {dedupe: ['vue', 'pinia', 'vue-router', 'element-plus']},
+resolve: {dedupe: ['vue', 'pinia', 'vue-router', 'element-plus', 'axios']},
 ```
 
 Vue 插件应将 `iconify-icon` 标记为自定义元素（模板已配置）。Tailwind 的 content 除业务目录外，还需包含：
@@ -97,27 +97,19 @@ Vue 插件应将 `iconify-icon` 标记为自定义元素（模板已配置）。
 
 本地源码位于同级 `go-admin-web/src`。在维护总目录执行 `./maintain.ps1 init` 建立源码链接，再通过 `./maintain.ps1 web` 启动；修改组件可直接热更新。依赖清单变化后再次运行 init。详见维护目录 README。
 
-发布前先在 web 目录执行 `yarn build` 验证模板。包目录中可运行：
+发布入口在维护根目录：运行 maintain.ps1 release，输入统一版本号。本地检查通过后，脚本提交前端版本号、推送两个仓库同名 Tag；npm 发布交给本仓库的 .github/workflows/publish.yml。
 
-```sh
-npm pack --dry-run
-npm pack
-```
+工作流监听 v* Tag，要求 Tag 与 package.json 版本一致。公共包没有独立的 npm build 或 package-lock.json，因此不会使用 npm ci 或 --if-present 跳过检查。CI 获取 go-admin-template/master，在临时模板中安装当前包源码，实际执行 vue-tsc 和 Vite 构建，通过后才发布。
 
-打包仅包含 package.json、README 和 src，不包含业务代码、配置文件或 node_modules。这个目录可以独立迁入自己的仓库，无需改变包内源码路径。
+npm 使用 Trusted Publisher（OIDC），配置为：
+- Organization or user：Gary-Yez
+- Repository：go-admin-web
+- Workflow filename：publish.yml（只填文件名）
+- Environment：留空
+- 若显示 Allowed actions，允许直接 npm publish
 
-确认 npm 账号拥有 @gary-yez scope 权限后，由维护者在包目录发布：
+无需 NPM_TOKEN 或本地验证码。可信发布需要在 npm 包设置中一次性授权，见 [官方说明](https://docs.npmjs.com/trusted-publishers/)。发布成功后工作流创建同名 GitHub Release；已有版本只有提交匹配时才跳过重复发布。
 
-```sh
-npm publish --access public
-```
+npm 可能在接受发布后异步处理。Actions 成功后确认新版本可下载，再运行 maintain.ps1 update-template 更新模板依赖。云端失败在 Actions 重跑；需要修改代码则发布新版本，不移动旧 Tag。
 
-本次仅抽离代码，没有执行发布。发布后，用户可将本地 file 依赖替换为：
-
-```sh
-yarn add @gary-yez/go-admin-web@指定版本
-```
-
-使用注册表版本后，Dockerfile 不再需要两行 COPY --from=go-admin-web。系统页面跟随 npm 包更新；业务页面、.env、部署文件仍由用户维护。
-
-代码生成器需搭配包含公共包导入改动的 go-admin 版本发布，旧版本生成器仍生成旧的相对路径。源码包 0.1.0 的后端接口沿用此次抽离前的接口。
+源码包由宿主编译，打包范围以 package.json 的 files 和 npm pack --dry-run 输出为准，不包含业务模板或 node_modules。代码生成器与公共前端应保持同一版本。

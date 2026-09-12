@@ -28,6 +28,10 @@
     "highlight.js": "11.11.1",
     "nprogress": "^0.2.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gary-Yez/go-admin-web.git"
+  },
   "publishConfig": {
     "access": "public"
   }

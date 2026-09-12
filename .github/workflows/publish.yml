@@ -1,22 +1,104 @@
 name: Publish npm
+
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+
 permissions:
   contents: read
-  id-token: write
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-          registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test --if-present
-      - run: npm publish
+      - name: Check tag and package version
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs'
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const tag = process.env.GITHUB_REF_NAME
+          if (!/^v[01]\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(tag) || tag !== 'v' + pkg.version) {
+            throw new Error('Tag must match package.json version')
+          }
+          NODE
+      # 源码包由宿主编译，使用模板实际执行类型检查和 Vite 构建。
+      - uses: actions/checkout@v6
+        with:
+          repository: Gary-Yez/go-admin-template
+          ref: master
+          path: .ci-template
+          persist-credentials: false
+      - run: npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org/
+      - name: Install current source in template
+        working-directory: .ci-template/web
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync, writeFileSync} from 'node:fs'
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          pkg.dependencies['@gary-yez/go-admin-web'] = 'file:../..'
+          writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')
+          NODE
+          yarn install --non-interactive --registry https://registry.npmjs.org/
+      - name: Type check and build
+        working-directory: .ci-template/web
+        run: yarn build
+      - run: npm pack --dry-run
+
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm install --global npm@11 --registry=https://registry.npmjs.org/
+      - name: Check whether this commit is already published
+        id: package
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync, appendFileSync} from 'node:fs'
+          import {execFileSync} from 'node:child_process'
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const url = 'https://registry.npmjs.org/' + encodeURIComponent(pkg.name) + '/' + pkg.version
+          const response = await fetch(url, {signal: AbortSignal.timeout(30000)})
+          if (response.status === 404) {
+            appendFileSync(process.env.GITHUB_OUTPUT, 'publish=true\n')
+          } else {
+            if (!response.ok) throw new Error('Registry lookup failed: ' + response.status)
+            const existing = await response.json()
+            const head = execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim()
+            if (existing.gitHead !== head) throw new Error('Version already exists from a different or unknown commit')
+            appendFileSync(process.env.GITHUB_OUTPUT, 'publish=false\n')
+          }
+          NODE
+      - name: Publish using npm Trusted Publisher
+        if: steps.package.outputs.publish == 'true'
+        run: npm publish --access public --provenance --registry=https://registry.npmjs.org/
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          tags=$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" --jq '.[] | select(.draft == false) | .tag_name')
+          if ! grep -Fxq "$TAG" <<< "$tags"; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          fi
