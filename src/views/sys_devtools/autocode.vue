@@ -151,10 +151,10 @@
             <el-table-column label="索引类型" :width="130">
               <template #default="{ row,$index }">
                 <el-form-item :prop="`${row.id < 0 ? 'builtin_fields' : 'fields'}.${row.id < 0 ? $index : $index - 3}.index_type`">
-                  <el-select :disabled="row.id < 0" v-model="row.index_type" placeholder="索引类型" clearable>
-                    <el-option label="index" value="index"></el-option>
-                    <el-option label="unique" value="unique"></el-option>
-                    <el-option label="uniqueIndex" value="uniqueIndex"></el-option>
+                  <el-select :disabled="row.id < 0" v-model="row.index_type" placeholder="无索引" clearable>
+                    <el-option label="普通索引" value="index"></el-option>
+                    <el-option label="唯一索引" value="uniqueIndex"></el-option>
+                    <el-option v-if="row.index_type === 'unique'" label="唯一约束" value="unique"></el-option>
                   </el-select>
                 </el-form-item>
               </template>
