@@ -1,0 +1,79 @@
+:root{
+  --el-color-primary: #005eeb;
+  --main-bg-color:#fff;
+  --main-bg-light-color:#f5f7fa;
+  --main-text-color:#334155;
+}
+
+html.dark{
+  color-scheme: dark;
+  --main-bg-light-color: #272f3b;
+  --main-bg-color: #303a48;
+  --main-text-color: #edf2f8;
+
+  --el-bg-color-page: var(--main-bg-light-color);
+  --el-bg-color: var(--main-bg-color);
+  --el-bg-color-overlay: #384454;
+
+  --el-text-color-primary: #edf2f8;
+  --el-text-color-regular: #d5deea;
+  --el-text-color-secondary: #aebdd0;
+  --el-text-color-placeholder: #93a3b8;
+  --el-text-color-disabled: #77869b;
+
+  --el-border-color: #566378;
+  --el-border-color-light: #49576b;
+  --el-border-color-lighter: #414e61;
+  --el-border-color-extra-light: #3b4758;
+  --el-border-color-dark: #61718a;
+  --el-border-color-darker: #71819a;
+
+  --el-fill-color: #414e61;
+  --el-fill-color-light: #3b485a;
+  --el-fill-color-lighter: #364253;
+  --el-fill-color-extra-light: #333e4e;
+  --el-fill-color-dark: #4a586e;
+  --el-fill-color-darker: #53627b;
+  --el-fill-color-blank: var(--el-bg-color);
+
+  // 状态色的浅色变体在深色模式下使用灰蓝底色，避免出现黑色色块。
+  .status-colors(@name; @color){
+    --el-color-@{name}: @color;
+    --el-color-@{name}-light-3: mix(@color, #303a48, 70%);
+    --el-color-@{name}-light-5: mix(@color, #303a48, 50%);
+    --el-color-@{name}-light-7: mix(@color, #303a48, 30%);
+    --el-color-@{name}-light-8: mix(@color, #303a48, 20%);
+    --el-color-@{name}-light-9: mix(@color, #303a48, 10%);
+    --el-color-@{name}-dark-2: mix(@color, #ffffff, 80%);
+  }
+  .status-colors(primary; #83b4ff);
+  .status-colors(success; #8bcf9c);
+  .status-colors(warning; #eac17c);
+  .status-colors(danger; #f2969c);
+  .status-colors(error; #f2969c);
+  .status-colors(info; #b4c0d0);
+
+  --el-mask-color: rgba(25, 33, 44, .72);
+  --el-mask-color-extra-light: rgba(25, 33, 44, .4);
+  --el-overlay-color: rgba(13, 20, 30, .56);
+  --el-overlay-color-light: rgba(13, 20, 30, .4);
+  --el-overlay-color-lighter: rgba(13, 20, 30, .3);
+  --el-box-shadow: 0 8px 24px rgba(13, 20, 30, .24);
+  --el-box-shadow-light: 0 5px 18px rgba(13, 20, 30, .2);
+  --el-box-shadow-lighter: 0 2px 10px rgba(13, 20, 30, .14);
+  --el-box-shadow-dark: 0 12px 32px rgba(13, 20, 30, .32);
+
+  // 实底按钮与菜单采用深色文字，保持亮色背景上的可读性。
+  .el-button--primary:not(.is-plain):not(.is-text):not(.is-link),
+  .el-button--success:not(.is-plain):not(.is-text):not(.is-link),
+  .el-button--warning:not(.is-plain):not(.is-text):not(.is-link),
+  .el-button--danger:not(.is-plain):not(.is-text):not(.is-link),
+  .el-button--info:not(.is-plain):not(.is-text):not(.is-link) {
+    --el-button-text-color: #202b3a;
+    --el-button-hover-text-color: #202b3a;
+    --el-button-active-text-color: #202b3a;
+    --el-button-disabled-text-color: #aebdd0;
+  }
+  .main-slider-menu .el-menu-item.is-active { color: #202b3a; }
+  .el-pagination.is-background .el-pager li.is-active { color: #202b3a; }
+}

@@ -1,0 +1,223 @@
+
+body{
+  margin:0;
+  padding:0;
+}
+*{
+  box-sizing: border-box;
+}
+
+#app{
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+}
+
+.container{
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  //height: 100%;
+  &.el-card{
+    border: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track-piece{
+  background-color: transparent;
+  -webkit-border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:vertical{
+  height: 6px;
+  background-color: #D0D0D0;
+  -webkit-border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:horizontal{
+  width: 6px;
+  background-color: #D0D0D0;
+  -webkit-border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:vertical:hover,::-webkit-scrollbar-thumb:horizontal:hover{
+  background-color: #D0D0D0;
+}
+
+/* fade */
+.fade-leave-active,
+.fade-enter-active {
+  transition: opacity .5s, transform .5s;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+
+.table-btn-group{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+  white-space: nowrap;
+  .el-button{
+    margin: 0;
+    padding: 7px 9px;
+    border-radius: 6px;
+  }
+  .el-button + .el-button{
+    margin-left: 0;
+  }
+}
+
+#app{
+  .el-avatar{
+    background: transparent;
+  }
+}
+
+.el-card{
+  transition: unset !important;
+  .el-card__body{
+    transition: unset !important;
+  }
+}
+
+.el-drawer{
+  .el-drawer__header{
+    padding: 15px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--el-border-color);
+  }
+  .el-drawer__footer{
+    padding:8px 15px;
+    border-top: 1px solid var(--el-border-color);
+  }
+}
+
+// 列表筛选栏，供系统页面和生成页面复用。
+.search-form{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  .el-form-item{
+    align-items: center;
+    margin: 0;
+  }
+  .el-form-item__label{
+    padding-right: 8px;
+    color: var(--el-text-color-regular);
+  }
+  .el-input, .el-select, .el-input-number{
+    width: var(--search-control-width, 180px);
+  }
+  // 范围选择器也是 input wrapper，需关闭默认 flex 拉伸。
+  .el-date-editor.el-range-editor{
+    flex: 0 1 auto;
+    width: var(--search-range-width, 280px);
+    max-width: 100%;
+    min-width: 0;
+    &.el-date-editor--datetimerange{
+      width: var(--search-range-width, 340px);
+    }
+    .el-range-input{
+      flex: 1;
+      width: 0;
+      min-width: 0;
+      font-size: 13px;
+      text-overflow: ellipsis;
+    }
+    .el-range-separator{
+      flex: none;
+      width: auto;
+      padding: 0 6px;
+    }
+  }
+  @media (max-width: 600px){
+    .el-form-item, .el-input, .el-select, .el-input-number{
+      width: 100%;
+    }
+    .el-date-editor.el-range-editor{
+      &, &.el-date-editor--datetimerange{
+        width: 100%;
+      }
+    }
+  }
+}
+
+/* 列表页的分页与辅助信息，系统页面和生成页面共用。 */
+.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; overflow-x: auto; }
+.table-muted { color: var(--el-text-color-placeholder); }
+.table-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .table-pagination { justify-content: flex-start; }
+}
+/* 共用删除确认框。 */
+.delete-confirm-box {
+  width: 460px; max-width: calc(100vw - 32px); padding: 20px; border-radius: 10px;
+  .el-message-box__header { padding: 0 0 16px; }
+  .el-message-box__title { font-size: 13px; color: var(--el-text-color-secondary); }
+  .el-message-box__content { padding: 0; }
+  .el-message-box__btns { padding: 0; gap: 8px; }
+  .el-message-box__btns .el-button + .el-button { margin-left: 0; }
+  .delete-confirm-button { --el-button-bg-color: var(--el-color-danger); --el-button-border-color: var(--el-color-danger); --el-button-hover-bg-color: var(--el-color-danger-light-3); --el-button-hover-border-color: var(--el-color-danger-light-3); --el-button-active-bg-color: var(--el-color-danger-dark-2); --el-button-active-border-color: var(--el-color-danger-dark-2); }
+}
+/* 收起侧栏的子菜单浮层挂载在 body 下，使用独立类限定样式。 */
+.sidebar-menu-popper.el-popper {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+  .el-menu--popup {
+    min-width: 196px;
+    padding: 6px;
+    border-radius: 9px;
+    background: var(--el-bg-color-overlay);
+    box-shadow: none;
+  }
+  .el-menu-item, .el-sub-menu__title {
+    height: 42px;
+    line-height: 42px;
+    padding: 0 14px;
+    margin: 2px 0;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    transition: color .18s ease, background-color .18s ease;
+  }
+  .el-menu-item .el-icon, .el-sub-menu__title .el-icon {
+    margin-right: 10px;
+    font-size: 18px;
+    color: var(--el-text-color-secondary);
+  }
+  .el-sub-menu__title { padding-right: 36px; }
+  .el-sub-menu__icon-arrow { right: 12px; font-size: 12px; }
+  .el-menu-item:hover, .el-menu-item:focus, .el-sub-menu__title:hover {
+    color: var(--el-color-primary);
+    background: var(--el-fill-color-light);
+  }
+  .el-menu-item.is-active {
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    font-weight: 500;
+  }
+  .el-menu-item.is-active .el-icon,
+  .el-sub-menu.is-active > .el-sub-menu__title,
+  .el-sub-menu.is-active > .el-sub-menu__title .el-icon { color: var(--el-color-primary); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-menu-popper .el-menu-item, .sidebar-menu-popper .el-sub-menu__title { transition: none; }
+}

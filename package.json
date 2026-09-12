@@ -1,0 +1,28 @@
+{
+  "name": "@gary-yez/go-admin-web",
+  "version": "0.1.0",
+  "description": "go-admin 公共管理端：系统页面、布局、请求封装和业务组件",
+  "type": "module",
+  "files": ["src", "README.md", "MIGRATION.md"],
+  "exports": {
+    ".": "./src/index.ts",
+    "./style": "./src/style.ts"
+  },
+  "sideEffects": true,
+  "peerDependencies": {
+    "axios": "^1.18.0",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5",
+    "pinia": "^2.2.5",
+    "element-plus": "^2.11.3",
+    "vite": "^8.0.0"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@iconify-json/iconoir": "^1.2.7",
+    "echarts": "^5.5.1",
+    "highlight.js": "11.11.1",
+    "nprogress": "^0.2.0"
+  },
+  "publishConfig": {"access": "public"}
+}
