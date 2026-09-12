@@ -1,9 +1,13 @@
 {
   "name": "@gary-yez/go-admin-web",
-  "version": "0.1.0",
+  "version": "0.11.3",
   "description": "go-admin 公共管理端：系统页面、布局、请求封装和业务组件",
   "type": "module",
-  "files": ["src", "README.md", "MIGRATION.md"],
+  "files": [
+    "src",
+    "README.md",
+    "MIGRATION.md"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./style": "./src/style.ts"
@@ -24,5 +28,7 @@
     "highlight.js": "11.11.1",
     "nprogress": "^0.2.0"
   },
-  "publishConfig": {"access": "public"}
+  "publishConfig": {
+    "access": "public"
+  }
 }
