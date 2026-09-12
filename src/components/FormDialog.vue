@@ -95,8 +95,3 @@ const handleConfirm = async () => {
   }
 }
 </script>
-
-
-<style scoped lang="less">
-
-</style>

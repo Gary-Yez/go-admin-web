@@ -123,6 +123,3 @@ const getPageData = async () => {
     },
   })
 </script>
-
-<style scoped lang="less">
-</style>

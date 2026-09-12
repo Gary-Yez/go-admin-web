@@ -26,6 +26,3 @@ watch(() => [siteStore.info.title, siteStore.info.name, siteStore.info.favicon],
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 </script>
-
-<style scoped>
-</style>

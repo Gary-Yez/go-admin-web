@@ -37,7 +37,3 @@ const BuildMenuPath = (menu:any) => {
   return props.prefix + "/" + menu.path
 }
 </script>
-
-<style scoped>
-
-</style>
