@@ -6,7 +6,13 @@ declare module "axios" {
     interface InternalAxiosRequestConfig { sessionToken?:string }
 }
 
-const request = axios.create()
+// 热更新会重建请求模块；保留宿主启动时设置的 API 地址等默认配置。
+const request = axios.create(import.meta.hot?.data.requestDefaults)
+if (import.meta.hot) {
+    import.meta.hot.dispose(data => {
+        data.requestDefaults = request.defaults
+    })
+}
 
 // 这些入口不依赖登录，开发工具的环境限制由后端负责。
 const anonymousPaths = new Set([
