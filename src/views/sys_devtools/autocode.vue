@@ -56,8 +56,11 @@
             <el-table-column label="字段名称">
               <template #default="{ row,$index }">
                 <el-form-item :prop="`${row.id < 0 ? 'builtin_fields' : 'fields'}.${row.id < 0 ? $index : $index - 3}.name`" :rules="[{required:true,message:'请输入字段名称'}]">
-                  <el-tag size="small" :type="row.id < 0 ? 'info' : 'primary'" class="mr-[6px]">{{ row.id < 0 ? '内置' : '自定义' }}</el-tag>
-                  <el-input :disabled="row.id < 0" v-model="row.name" placeholder="请输入字段名称" @input="(val:any)=>handleChangeFieldName(row,val)"></el-input>
+                  <el-input :disabled="row.id < 0" v-model="row.name" placeholder="请输入字段名称" @input="(val:any)=>handleChangeFieldName(row,val)">
+                    <template #prefix>
+                      <el-tag size="small" :type="row.id < 0 ? 'info' : 'primary'" class="w-[48px] justify-center">{{ row.id < 0 ? '内置' : '自定义' }}</el-tag>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </template>
             </el-table-column>
@@ -152,6 +155,7 @@
               <template #default="{ row,$index }">
                 <el-form-item :prop="`${row.id < 0 ? 'builtin_fields' : 'fields'}.${row.id < 0 ? $index : $index - 3}.index_type`">
                   <el-select :disabled="row.id < 0" v-model="row.index_type" placeholder="无索引" clearable>
+                    <el-option v-if="row.id < 0 && row.name === 'id'" label="主键" value="primaryKey"></el-option>
                     <el-option label="普通索引" value="index"></el-option>
                     <el-option label="唯一索引" value="uniqueIndex"></el-option>
                     <el-option v-if="row.index_type === 'unique'" label="唯一约束" value="unique"></el-option>

@@ -21,7 +21,7 @@ export function createBuiltinFields():GeneratorField[] {
         {name:'created_at',key:'CreatedAt',type:'time.Time',chinese_name:'创建时间'},
         {name:'updated_at',key:'UpdatedAt',type:'time.Time',chinese_name:'更新时间'},
     ].map((field,index)=>{
-        return {...field,id:-(index+1),index_type:'',query_type:'',editable:false,required:false,
+        return {...field,id:-(index+1),index_type:field.name === 'id' ? 'primaryKey' : '',query_type:'',editable:false,required:false,
             table_show:true,sortable:true}
     })
 }
