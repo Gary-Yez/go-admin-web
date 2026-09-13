@@ -3,7 +3,7 @@ import {defineStore} from "pinia";
 import { formatTime } from "../utils/formatTime.ts";
 import {ElMessage} from "element-plus";
 
-export const useCommonStore = defineStore("commonStore", {
+export const useCommonStore = defineStore("sys_common", {
     state: () => ({
         isDev:adminRuntime.dev,
         currentTime:"",

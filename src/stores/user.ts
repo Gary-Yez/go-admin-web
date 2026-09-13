@@ -5,7 +5,7 @@ import {addSyncRouter, resetSyncRouter} from "../routes/syncMenu.ts";
 import {ElMessage} from "element-plus";
 import {SysAuthApi} from "../apis/sys_auth.ts";
 
-export const useUserStore = defineStore("userStore", {
+export const useUserStore = defineStore("sys_user", {
     state: () => ({
         AccessToken: localStorage.getItem("access_token") || "",
         IsLogin: false,

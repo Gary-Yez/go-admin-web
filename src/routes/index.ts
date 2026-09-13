@@ -1,10 +1,11 @@
+import {adminRuntime} from "../runtime";
 import {createRouter, createWebHashHistory} from 'vue-router';
 import {useUserStore} from "../stores/user.ts";
 import {addSyncRouter, getBaseRouter, layoutsModules} from "./syncMenu.ts";
 //@ts-ignore
 import NProgress from "nprogress"
 
-const router = createRouter({
+const router = adminRuntime.router ?? createRouter({
     history: createWebHashHistory(),
     routes:[{
         path:"/",
@@ -17,7 +18,12 @@ const router = createRouter({
 })
 
 
-router.beforeEach(async (to, _, next) => {
+adminRuntime.router = router
+// 复用路由实例时，只替换框架注册的守卫。
+adminRuntime.routeGuards.forEach(remove => remove())
+adminRuntime.routeGuards = []
+
+adminRuntime.routeGuards.push(router.beforeEach(async (to, _, next) => {
     NProgress.start();
     const userStore = useUserStore()
     if (userStore.AccessToken && !userStore.IsLogin){
@@ -39,10 +45,10 @@ router.beforeEach(async (to, _, next) => {
         return next('/dashboard')
     }
     next()
-})
+}))
 
-router.afterEach(() => {
+adminRuntime.routeGuards.push(router.afterEach(() => {
     NProgress.done();
-})
+}))
 
 export default router;

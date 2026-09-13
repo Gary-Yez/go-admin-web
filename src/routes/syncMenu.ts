@@ -1,10 +1,9 @@
+import {adminRuntime} from "../runtime";
 import router from "./index.ts";
 import {watch} from "vue";
 import {coreModules, layoutsModules, viewModules} from "./componentModules.ts";
 export {layoutsModules, viewModules, SyncComponents} from "./componentModules.ts";
 
-let currentMenus:Array<any> | undefined
-let currentDefaultMenu = 'sys_home'
 
 export const getBaseRouter = ()=>{
     return {
@@ -62,14 +61,14 @@ const clearSyncRoutes = ()=>{
 
 export const resetSyncRouter = ()=>{
     clearSyncRoutes()
-    currentMenus = undefined
+    adminRuntime.menus = undefined
     router.addRoute(getBaseRouter())
 }
 
 export const addSyncRouter = (menus:Array<any>, defaultMenu = 'sys_home')=>{
     clearSyncRoutes()
-    currentMenus = menus
-    currentDefaultMenu = defaultMenu
+    adminRuntime.menus = menus
+    adminRuntime.defaultMenu = defaultMenu
     let routes:any = flatMenuTreeToRouter(menus,[])
     const dashboardRouter:any = getBaseRouter()
     dashboardRouter.children.push(...routes)
@@ -89,7 +88,7 @@ if (import.meta.hot){
     const stop = watch(
         ()=>[Object.keys(coreModules),Object.keys(layoutsModules),Object.keys(viewModules)],
         ()=>{
-            if (currentMenus) addSyncRouter(currentMenus,currentDefaultMenu)
+            if (adminRuntime.menus) addSyncRouter(adminRuntime.menus,adminRuntime.defaultMenu)
         }
     )
     import.meta.hot.dispose(stop)

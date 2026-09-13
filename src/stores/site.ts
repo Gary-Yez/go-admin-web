@@ -1,7 +1,7 @@
 import {defineStore} from "pinia";
 import {SysConfigApi, type SiteInfo} from "../apis/sys_config.ts";
 
-export const useSiteStore = defineStore('site', {
+export const useSiteStore = defineStore('sys_site', {
     state: () => ({
         info: {
             name: 'Go Admin', logo: '/logo.png', favicon: '/logo.png',

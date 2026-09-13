@@ -79,6 +79,7 @@ if (import.meta.hot) {
 | `dev?: boolean` | 显示开发工具入口，默认 false；不是后端安全限制 |
 | `mount?: string \| Element` | 挂载目标，默认 #app |
 | `setup?: (app: App) => void` | 同步执行的 Vue 扩展回调 |
+| `requestHooks?: RequestHooks` | 请求发送前、成功业务响应后的同步或异步扩展 |
 
 创建方法返回 `{app, router, pinia}`，不表示登录资料已经加载。一个页面只创建一个管理端应用；包内部请求实例和路由是共享的。
 
@@ -301,3 +302,34 @@ UserStore 还暴露 AccessToken、setAccessToken、setUserData；普通页面优
 本包由宿主执行类型检查和构建，例如模板中的 `yarn build`。仅安装 npm 包不会产生可部署管理端。
 
 升级公共前端后，重新编译宿主并部署新产物；已生成的业务 Vue 文件仍属于业务项目，不会被 npm 升级自动重写。升级后端接口时同步检查前端版本、菜单组件 Key 和 peerDependencies，提交更新后的锁文件。
+
+### 追加请求处理
+
+通过 createAdminApp 的 requestHooks 配置扩展处理，无需手动注册 Axios 拦截器：
+
+```ts
+createAdminApp({
+  apiBaseURL: import.meta.env.VITE_API_BASE_URL,
+  pages,
+  requestHooks: {
+    beforeRequest(config, context) {
+      config.headers['X-Tenant-ID'] = 'tenant-001'
+      return config
+    },
+    afterResponse(data, context) {
+      // data 是 {code, message, data} 业务响应体，不是 AxiosResponse。
+      return data
+    },
+  },
+})
+```
+
+执行顺序为：框架设置登录令牌 → beforeRequest → 发送请求 → 框架校验业务状态 → afterResponse → 返回调用方。两个回调都支持 async，必须返回处理后的配置或数据；抛出异常会使请求失败，后续成功处理不再执行。失败响应不会调用 afterResponse。
+
+建议保留业务响应体结构，系统页面也使用同一个请求客户端。框架在异步回调结束后核对登录会话，角色切换或退出后的旧结果不会交给页面。扩展不能绕过框架原有匿名请求限制。
+
+回调统一保存在运行容器中，重新调用 createAdminApp 时替换，不叠加注册；省略 requestHooks 会清除此前的回调。模块热更新不会额外添加扩展拦截器。宿主启动文件是否完整刷新仍遵循 Vite 的热更新边界。
+
+两个回调的第二个参数均为公开类型 AdminContext，提供只读属性 pinia、router、dev。业务 Store 可通过 useYourStore(context.pinia) 获取，路由通过 context.router 使用。上下文不暴露请求实例、拦截器编号或清理函数。
+
+只读属性禁止替换实例，仍允许正常修改 Store 和调用 router.push()。context.dev 会读取当前运行配置。模板 main.ts 默认保留空的 requestHooks 和注释示例，无需扩展时保持为空即可。
