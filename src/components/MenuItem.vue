@@ -13,27 +13,27 @@
         </el-icon>
         <span>{{ menu.name }}</span>
       </template>
-      <MenuItem :prefix="BuildMenuPath(menu)" :menus="menu.children"></MenuItem>
+      <MenuItem :menus="menu.children" :prefix="BuildMenuPath(menu)"></MenuItem>
     </el-sub-menu>
   </template>
 </template>
 
-<script setup lang="ts">
-const props:any = defineProps({
-  menus:{
-    type:Array,
-    default:()=>{
+<script lang="ts" setup>
+const props: any = defineProps({
+  menus: {
+    type: Array,
+    default: () => {
       return []
     }
   },
-  prefix:{
-    type:String,
-    default:()=>{
+  prefix: {
+    type: String,
+    default: () => {
       return "/dashboard"
     }
   }
 })
-const BuildMenuPath = (menu:any) => {
+const BuildMenuPath = (menu: any) => {
   return props.prefix + "/" + menu.path
 }
 </script>

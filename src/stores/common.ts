@@ -1,6 +1,6 @@
 import {adminRuntime} from "../runtime";
 import {defineStore} from "pinia";
-import { formatTime } from "../utils/formatTime.ts";
+import { formatTime } from "../utils/formatTime";
 import {ElMessage} from "element-plus";
 
 export const useCommonStore = defineStore("sys_common", {

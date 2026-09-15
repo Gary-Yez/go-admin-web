@@ -1,4 +1,4 @@
-import {request} from "../utils/request.ts";
+import {request} from "../utils/request";
 
 export interface GeneratorField {
     id: number
@@ -15,14 +15,22 @@ export interface GeneratorField {
 }
 
 // 内置字段固定显示并支持排序，不从历史配置恢复。
-export function createBuiltinFields():GeneratorField[] {
+export function createBuiltinFields(): GeneratorField[] {
     return [
-        {name:'id',key:'Id',type:'uint',chinese_name:'编号'},
-        {name:'created_at',key:'CreatedAt',type:'time.Time',chinese_name:'创建时间'},
-        {name:'updated_at',key:'UpdatedAt',type:'time.Time',chinese_name:'更新时间'},
-    ].map((field,index)=>{
-        return {...field,id:-(index+1),index_type:field.name === 'id' ? 'primaryKey' : '',query_type:'',editable:false,required:false,
-            table_show:true,sortable:true}
+        {name: 'id', key: 'Id', type: 'uint', chinese_name: '编号'},
+        {name: 'created_at', key: 'CreatedAt', type: 'time.Time', chinese_name: '创建时间'},
+        {name: 'updated_at', key: 'UpdatedAt', type: 'time.Time', chinese_name: '更新时间'},
+    ].map((field, index) => {
+        return {
+            ...field,
+            id: -(index + 1),
+            index_type: field.name === 'id' ? 'primaryKey' : '',
+            query_type: '',
+            editable: false,
+            required: false,
+            table_show: true,
+            sortable: true
+        }
     })
 }
 
@@ -52,11 +60,17 @@ export interface PreviewFile {
     requires_overwrite: boolean
 }
 
-export interface HistoryQuery { page: number; limit: number; keyword?: string }
+export interface HistoryQuery {
+    page: number;
+    limit: number;
+    keyword?: string
+}
+
 export interface HistoryDeletePlan {
     token: string
     files: Array<{ path: string; action: 'delete' | 'modify' | 'missing' | 'unchanged'; existing_hash?: string }>
 }
+
 export interface GeneratorHistory {
     id: number
     module_name: string
@@ -91,41 +105,48 @@ export function parseHistoryConfig(form: string): GenerateConfig {
     }) : []
     // Restore only editable configuration, never file overwrite approval.
     return {
-        create_menu: saved.create_menu === true, menu_name: saved.menu_name || '',
-        menu_parent_key: saved.menu_parent_key || '', menu_icon: saved.menu_icon || '',
-        module_name: saved.module_name, model_name: saved.model_name,
+        create_menu: saved.create_menu === true,
+        menu_name: saved.menu_name || '',
+        menu_parent_key: saved.menu_parent_key || '',
+        menu_icon: saved.menu_icon || '',
+        module_name: saved.module_name,
+        model_name: saved.model_name,
         chinese_module_name: typeof saved.chinese_module_name === 'string' ? saved.chinese_module_name : '',
-        allow_create: saved.allow_create === true, allow_edit: saved.allow_edit === true, allow_delete: saved.allow_delete === true,
-        create_curd: saved.create_curd, use_soft_delete: saved.create_curd && saved.use_soft_delete === true, fields,
+        allow_create: saved.allow_create === true,
+        allow_edit: saved.allow_edit === true,
+        allow_delete: saved.allow_delete === true,
+        create_curd: saved.create_curd,
+        use_soft_delete: saved.create_curd && saved.use_soft_delete === true,
+        fields,
     }
 }
 
 export const SysDevtoolsApi = {
-    MenuOptions(){
+    MenuOptions() {
         return request.get("/sys_devtools/menu_options")
     },
-    Preview(formData:GenerateConfig){
+    Preview(formData: GenerateConfig) {
         return request.post("/sys_devtools/preview", formData)
     },
-    Generate(formData:GenerateConfig){
+    Generate(formData: GenerateConfig) {
         return request.post("/sys_devtools/generate", formData)
     },
-    History(query:HistoryQuery){
+    History(query: HistoryQuery) {
         return request.get("/sys_devtools/history", {
-            params:query
+            params: query
         })
     },
-    GetHistory(id:any){
+    GetHistory(id: any) {
         return request.get("/sys_devtools/get_history", {
             params: {
                 id
             }
         })
     },
-    PreviewDelete(ids:number[]){
-        return request.post("/sys_devtools/preview_delete_history", { ids })
+    PreviewDelete(ids: number[]) {
+        return request.post("/sys_devtools/preview_delete_history", {ids})
     },
-    Delete(ids:number[], deleteFiles = false, previewToken = ''){
+    Delete(ids: number[], deleteFiles = false, previewToken = '') {
         return request.post("/sys_devtools/delete_history", {
             ids, delete_files: deleteFiles, preview_token: previewToken
         })

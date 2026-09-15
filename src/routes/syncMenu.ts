@@ -1,8 +1,8 @@
 import {adminRuntime} from "../runtime";
-import router from "./index.ts";
+import router from "./index";
 import {watch} from "vue";
-import {coreModules, layoutsModules, viewModules} from "./componentModules.ts";
-export {layoutsModules, viewModules, SyncComponents} from "./componentModules.ts";
+import {coreModules, layoutsModules, viewModules} from "./componentModules";
+export {layoutsModules, viewModules, SyncComponents} from "./componentModules";
 
 
 export const getBaseRouter = ()=>{

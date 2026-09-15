@@ -1,9 +1,9 @@
 import {adminRuntime} from "../runtime";
 import {defineStore} from "pinia";
 import router from "../routes";
-import {addSyncRouter, resetSyncRouter} from "../routes/syncMenu.ts";
+import {addSyncRouter, resetSyncRouter} from "../routes/syncMenu";
 import {ElMessage} from "element-plus";
-import {SysAuthApi} from "../apis/sys_auth.ts";
+import {SysAuthApi} from "../apis/sys_auth";
 
 export const useUserStore = defineStore("sys_user", {
     state: () => ({
@@ -16,6 +16,7 @@ export const useUserStore = defineStore("sys_user", {
             role_id?:number,
             roles?:Array<{id:number,name:string}>,
             avatar?:string,
+            avatar_file_id?:number | null,
             username?:string,
             nickname?:string,
             phone?:string,

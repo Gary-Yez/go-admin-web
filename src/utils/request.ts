@@ -1,5 +1,5 @@
 import axios from "axios"
-import {useUserStore} from "../stores/user.ts";
+import {useUserStore} from "../stores/user";
 import {ElMessage} from "element-plus";
 import {adminRuntime, adminContext} from "../runtime";
 

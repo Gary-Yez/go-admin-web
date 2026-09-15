@@ -1,5 +1,5 @@
 import {defineStore} from "pinia";
-import {SysConfigApi, type SiteInfo} from "../apis/sys_config.ts";
+import {SysConfigApi, type SiteInfo} from "../apis/sys_config";
 
 export const useSiteStore = defineStore('sys_site', {
     state: () => ({

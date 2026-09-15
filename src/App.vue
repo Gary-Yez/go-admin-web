@@ -4,10 +4,12 @@
   </el-config-provider>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {useUserStore} from "./stores/user.ts";
-import {watch, onMounted} from "vue";
+import {onMounted, watch} from "vue";
 import {useSiteStore} from "./stores/site.ts";
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
 const userStore = useUserStore()
 const siteStore = useSiteStore()
 onMounted(() => siteStore.load())
@@ -22,7 +24,4 @@ watch(() => [siteStore.info.title, siteStore.info.name, siteStore.info.favicon],
   icon.removeAttribute('type')
   icon.href = siteStore.info.favicon || '/logo.png'
 }, {immediate: true})
-
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-
 </script>

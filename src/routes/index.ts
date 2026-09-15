@@ -1,7 +1,7 @@
 import {adminRuntime} from "../runtime";
 import {createRouter, createWebHashHistory} from 'vue-router';
-import {useUserStore} from "../stores/user.ts";
-import {addSyncRouter, getBaseRouter, layoutsModules} from "./syncMenu.ts";
+import {useUserStore} from "../stores/user";
+import {addSyncRouter, getBaseRouter, layoutsModules} from "./syncMenu";
 //@ts-ignore
 import NProgress from "nprogress"
 

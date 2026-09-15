@@ -333,3 +333,167 @@ createAdminApp({
 两个回调的第二个参数均为公开类型 AdminContext，提供只读属性 pinia、router、dev。业务 Store 可通过 useYourStore(context.pinia) 获取，路由通过 context.router 使用。上下文不暴露请求实例、拦截器编号或清理函数。
 
 只读属性禁止替换实例，仍允许正常修改 Store 和调用 router.push()。context.dev 会读取当前运行配置。模板 main.ts 默认保留空的 requestHooks 和注释示例，无需扩展时保持为空即可。
+
+## 自定义配置分组布局
+
+通过 createAdminApp 的 configLayouts 注册 Vue 组件，可以替换单个分组或合并多个分组。未声明的分组继续使用默认表单。存储账号由独立的存储管理页面维护，不再占用系统配置分组；自定义分组布局能力保持可用。
+
+```ts
+import BusinessSettingsLayout from './components/BusinessSettingsLayout.vue'
+
+createAdminApp({
+  apiBaseURL: import.meta.env.VITE_API_BASE_URL,
+  pages,
+  configLayouts: [
+    {
+      title: '业务设置',
+      groups: ['订单设置', '支付设置'],
+      component: BusinessSettingsLayout,
+    },
+  ],
+})
+```
+
+groups 对应后端配置定义的分组名称，不修改数据库。自定义布局优先于内置布局；一个分组只能被一个自定义布局声明，标题也不能重复。分组名称变更后应同步注册项。无效配置不使用自定义布局，始终用默认表单展示。
+
+自定义组件收到以下 props：
+
+| 参数 | 作用 |
+| --- | --- |
+| fields | 当前搜索条件匹配的字段；布局应展示这些字段 |
+| allFields | 该布局所属分组的全部字段，可读取布局依赖的选择项 |
+| form | 公共的草稿读取、修改、保存、恢复默认及状态方法 |
+| filtering | 是否正在按关键词搜索，条件布局应展示所有匹配项 |
+
+复用 ConfigField，无需复制控件、保存按钮及错误处理：
+
+```vue
+<script setup lang="ts">
+import {ConfigField} from '@gary-yez/go-admin-web'
+import type {ConfigLayoutProps} from '@gary-yez/go-admin-web'
+
+defineProps<ConfigLayoutProps>()
+</script>
+
+<template>
+  <div class="business-settings">
+    <el-form label-position="top" @submit.prevent>
+      <ConfigField
+        v-for="field in fields"
+        :key="field.key"
+        :config-key="field.key"
+        :fields="fields"
+        :form="form"
+      />
+    </el-form>
+  </div>
+</template>
+```
+
+ConfigField 根据字段定义渲染单选、密码、下拉、文本等控件，复用原有保存和恢复默认逻辑。也可以自行排列指定 Key 的 ConfigField；注意为新增字段提供遍历兜底，避免配置项被布局遗漏。
+
+form 提供 getValue、setValue、getError、isDisabled、isChanged、isSaving、save、reset，参数均以配置 Key 定位。reset 只把默认值填入草稿，save 才写入数据库。save 的校验和请求错误由页面维护并交给 ConfigField 展示，不以 Promise 完成判断是否保存成功。不要直接修改 fields 中的已保存值。页面刷新时保留未保存草稿，布局切换不丢失其他分组的修改。
+
+布局组件只负责呈现，列表请求、保存、缓存同步、清理无效项仍由配置管理页面统一处理。注册信息跨热更新保留，不创建第二套请求实例或表单状态。
+
+
+## 文件管理页面
+
+公共前端内置“系统运维 → 文件管理”，包含“文件列表”和“存储管理”两个子菜单，随系统菜单自动加载，无需在模板中复制页面。后端需要使用包含 sys_file 模块的版本，并在角色中配置菜单及对应 API 权限。
+
+页面沿用公共筛选、列选择、分页及删除确认组件。支持单文件上传、图片预览、下载和批量删除；超过 20 MiB 自动按 8 MiB 分片。上传抽屉展示进度，可以暂停，刷新或重启后从列表“继续上传”重新选择原文件；页面核对文件名、大小和修改时间，并跳过服务端已经确认的分片。
+
+“清理过期上传”删除超过 7 天仍未完成的会话和分片。删除已完成文件也会删除存储对象，业务中引用该文件的位置将不可用。下载地址是 60 秒有效的临时凭证，通过当前请求客户端的 API 基础地址解析，不携带登录令牌。
+
+存储管理支持同一引擎的多个账号，按所选引擎显示配置表单。可以修改名称、凭据、启用状态和默认账号；账号已被文件引用时，页面禁用位置字段，后端也会验证。密码原值不回显，编辑时留空保留。
+
+上传窗口可选择已启用的存储账号，默认选中默认账号；续传固定原账号，不能中途更换。文件列表显示账号名称，并支持按账号筛选。默认账号变化只影响新的默认选择，不改变已有文件归属。
+
+
+### 业务文件上传
+
+FileUpload 自动接入文件管理上传接口，加载全局上传配置和存储账号，处理普通上传、分片、进度、暂停、续传与取消。组件不包含抽屉或弹窗，不传插槽时展示默认上传界面；传入默认作用域插槽后，由业务完全自定义界面，上传逻辑保持不变。
+
+例如头像选择界面（上传后还需将文件 ID 提交给自己的资料接口）：
+
+```vue
+<script setup lang="ts">
+import {ref} from 'vue'
+import {FileUpload, SysFileApi, type ManagedFile} from '@gary-yez/go-admin-web'
+
+const avatarUrl = ref('')
+const avatarFileId = ref<number>()
+
+async function uploaded(file: ManagedFile) {
+  avatarFileId.value = file.id
+  avatarUrl.value = await SysFileApi.Link(file.id, true)
+  // 保存资料时提交 avatarFileId，后端校验文件归属、完成状态及图片内容。
+}
+</script>
+
+<template>
+  <FileUpload :allowed-extensions="['jpg', 'png', 'webp']"
+              :max-size="5 * 1024 * 1024"
+              @success="uploaded">
+    <template #default="{ select, canSelect, uploading, processing, progress, error, loading, reload }">
+      <el-avatar :src="avatarUrl" :size="80"/>
+      <el-button :disabled="!canSelect" :loading="uploading || loading" @click="select">
+        更换头像
+      </el-button>
+      <el-progress v-if="uploading" :percentage="progress" :indeterminate="processing"/>
+      <el-text v-if="error" type="danger">{{ error }}</el-text>
+      <el-button v-if="error && !uploading" text @click="reload">重新加载配置</el-button>
+    </template>
+  </FileUpload>
+</template>
+```
+
+不需要自定义界面时：
+
+```vue
+<FileUpload @success="uploaded"/>
+```
+
+默认选择文件后自动上传。传入 :auto-upload="false" 可改为手动开始。文件管理页面自行用 el-drawer 包裹该组件，并采用手动上传。
+
+| 参数 / 事件 | 用途 |
+|---|---|
+| auto-upload | 默认 true，选中文件且校验通过后自动上传 |
+| disabled | 禁止选择、开始、修改存储和取消；正在运行的请求仍可暂停 |
+| allowed-extensions | 可选业务扩展名数组，与全局限制取交集 |
+| max-size | 可选业务大小上限，单位字节 |
+| target | 续传的文件记录，需要重新选择原文件 |
+| policy、storages | 可选；两者都传入时复用调用方数据，否则组件挂载时加载配置 |
+| success(file) | 上传完成，返回 ManagedFile；业务保存 file.id |
+| session(file) | 创建或读取分片会话后返回文件记录，调用方可保存用于重新挂载续传 |
+| cancelled | 会话已成功取消 |
+| error(message) | 文件校验或上传、取消失败 |
+| changed | 上传尝试结束或取消后触发，供列表刷新；不代表成功 |
+
+默认插槽提供以下状态和操作，业务不用重新编写上传请求：
+
+| 插槽属性 | 用途 |
+|---|---|
+| file、result | 所选浏览器文件、上传成功后的文件记录 |
+| uploading、processing、cancelling、completed | 上传中、存储处理或合并中、取消中、已完成 |
+| progress、error、message、loading | 进度、错误、状态提示、配置加载状态 |
+| policy、storages、storageId、sessionId | 上传策略、可用存储账号、当前账号、会话 ID |
+| allowedExtensions、accept | 全局与业务限制的交集、文件选择器 accept 字符串 |
+| canSelect、canStart | 当前是否可以选择文件或开始上传 |
+| select() | 打开组件内置的文件选择器 |
+| chooseFile(file) | 接收业务拖拽等方式取得的 File，复用校验和自动上传 |
+| setStorage(id) | 选择存储账号；上传中和已有会话时禁止更换 |
+| start()、resume()、pause() | 开始、继续、暂停请求；暂停保留分片会话 |
+| cancel() | 取消未完成会话并清理已上传分片；请先暂停并等待 uploading 为 false，可由业务自行确认 |
+| reset() | 暂停并重置本地状态，重新加载配置；不会删除服务器上的会话 |
+| reload() | 重新加载配置，不清空当前文件和会话 |
+
+select、chooseFile、start、resume、pause、cancel、reset、reload 也通过组件 ref 公开。默认界面取消会话时带确认弹窗；自定义插槽调用 cancel() 不强制弹窗。
+
+组件卸载会中止请求。关闭外部抽屉时应通过 v-if 卸载组件，或者用组件 ref 调用 pause()；仅 v-show 隐藏不会暂停。需要重新挂载后续传时，保留 session 事件返回的记录并通过 target 传回；组件不持久化会话，也不会自动读取浏览器本地文件。清空业务保存的会话引用时注意区分“上传成功”和“暂停”，避免丢失续传入口。
+
+组件使用 GET /sys_file/options，不需要文件列表查询权限。角色需拥有 options、upload 以及分片所需 begin、session、part、complete、abort 接口权限；预览需要 link 权限，组件不会自动授予权限。
+
+业务限制属于前端交互限制，业务后端仍需校验关联文件的归属、完成状态、大小和真实内容。全局扩展名限制由上传后端强制执行。上传不会自动修改头像字段或其他业务数据。
+
+实际文件预览可调用公开的 SysFileApi.Link(file.id, true)。返回地址可能过期，业务持久化文件 ID，不保存临时地址。上面的头像示例需要预先启用默认存储账号；若没有默认账号，自定义界面应通过 storages 和 setStorage(id) 提供账号选择。

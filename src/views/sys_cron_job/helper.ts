@@ -1,9 +1,9 @@
-import {loadZero} from "../../utils/utils.ts";
+import {loadZero} from "../../utils/utils";
 
-export const needShow = function (method:string,key:string) {
-    if (cronMethod[method]){
+export const needShow = function (method: string, key: string) {
+    if (cronMethod[method]) {
         return cronMethod[method]?.forms.includes(key)
-    }else{
+    } else {
         return false
     }
 }
@@ -16,47 +16,47 @@ export const weeks = [
     "周六",
     "周日",
 ]
-export const cronMethod:any = {
-    "perMonth":{
-        label:"每月",
-        forms:["day","hour","minute"],
+export const cronMethod: any = {
+    "perMonth": {
+        label: "每月",
+        forms: ["day", "hour", "minute"],
     },
-    "perWeek":{
-        label:"每周",
-        forms:["week","hour","minute"],
+    "perWeek": {
+        label: "每周",
+        forms: ["week", "hour", "minute"],
     },
-    "perDay":{
-        label:"每天",
-        forms:["hour","minute"],
+    "perDay": {
+        label: "每天",
+        forms: ["hour", "minute"],
     },
-    "perHour":{
-        label:"每小时",
-        forms:["minute"],
+    "perHour": {
+        label: "每小时",
+        forms: ["minute"],
     },
-    "perNDay":{
-        label:"每N天",
-        forms:["day","hour","minute"],
+    "perNDay": {
+        label: "每N天",
+        forms: ["day", "hour", "minute"],
     },
-    "perNHour":{
-        label:"每N时",
-        forms:["hour","minute"],
+    "perNHour": {
+        label: "每N时",
+        forms: ["hour", "minute"],
     },
-    "perNMinute":{
-        label:"每N分钟",
-        forms:["minute"],
+    "perNMinute": {
+        label: "每N分钟",
+        forms: ["minute"],
     },
-    "perNSecond":{
-        label:"每N秒",
-        forms:["second"],
+    "perNSecond": {
+        label: "每N秒",
+        forms: ["second"],
     },
 }
 
-export function transObjToSpec(specType: string, week:number, day:number, hour:number, minute:number, second:number, timezone = ''): string {
+export function transObjToSpec(specType: string, week: number, day: number, hour: number, minute: number, second: number, timezone = ''): string {
     const expression = transObjToExpression(specType, week, day, hour, minute, second);
     return expression && timezone ? `CRON_TZ=${timezone} ${expression}` : expression;
 }
 
-function transObjToExpression(specType: string, week:number, day:number, hour:number, minute:number, second:number): string {
+function transObjToExpression(specType: string, week: number, day: number, hour: number, minute: number, second: number): string {
     switch (specType) {
         case 'perMonth':
             return `${minute} ${hour} ${day} * *`;
@@ -89,7 +89,7 @@ export function transSpecToObj(spec: string) {
         minute: 0,
         second: 0,
     };
-    if (!spec){
+    if (!spec) {
         return {
             ...specItem,
             minute: 1
@@ -151,7 +151,7 @@ export function transSpecToStr(spec: string): string {
 
 function formatSpec(spec: string): string {
     const specObj = transSpecToObj(spec);
-    if (!specObj){
+    if (!specObj) {
         return '';
     }
     switch (specObj.specType) {

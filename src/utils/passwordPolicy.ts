@@ -1,6 +1,6 @@
 import {computed, ref} from "vue";
 import type {FormItemRule} from "element-plus";
-import {SysAuthApi, type PasswordPolicy} from "../apis/sys_auth.ts";
+import {SysAuthApi, type PasswordPolicy} from "../apis/sys_auth";
 
 // 每次打开密码表单重新获取，避免配置调整后继续使用旧限制。
 export function usePasswordPolicy(required:()=>boolean = ()=>true) {

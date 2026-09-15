@@ -1,4 +1,4 @@
-import {h, ref} from "vue";
+import {h, ref, type VNodeChild} from "vue";
 import {ElMessageBox} from "element-plus";
 import DeleteNotice from "../components/DeleteNotice.vue";
 
@@ -7,6 +7,7 @@ type DeleteOptions = {
     count:number
     description?:string
     target?:string
+    extraContent?:()=>VNodeChild
     onConfirm:()=>Promise<unknown>
 }
 
@@ -17,7 +18,7 @@ export async function confirmDelete(options:DeleteOptions):Promise<void> {
     try {
         await ElMessageBox({
             title:'删除确认',
-            message:()=>h(DeleteNotice, {...options,error:error.value}),
+            message:()=>h('div', [h(DeleteNotice, {...options,error:error.value}), options.extraContent?.()]),
             customClass:'delete-confirm-box',
             showCancelButton:true,
             confirmButtonText:'确认删除',

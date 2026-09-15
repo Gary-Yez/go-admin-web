@@ -1,18 +1,22 @@
 import "./icons"
-import {createApp} from 'vue'
 import type {App} from 'vue'
+import {createApp} from 'vue'
 import ElementPlus from 'element-plus'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import AdminApp from './App.vue'
 import router from './routes'
 import {request} from './utils/request'
 import {readRememberedUsername} from './utils/rememberAccount'
-import {adminRuntime} from './runtime'
 import type {RequestHooks} from './runtime'
-import {registerAdminPages} from './routes/componentModules'
+import {adminRuntime} from './runtime'
 import type {ComponentModules} from './routes/componentModules'
+import {registerAdminPages} from './routes/componentModules'
+
+import type {ConfigLayout} from './configLayouts'
+import {configureConfigLayouts} from './configLayouts'
 
 export interface AdminOptions {
+    configLayouts?: ConfigLayout[]
     apiBaseURL: string
     pages?: ComponentModules
     dev?: boolean
@@ -23,6 +27,7 @@ export interface AdminOptions {
 
 // 每个页面创建一个管理端应用，系统与业务共用同一套路由、状态和请求实例。
 export function createAdminApp(options: AdminOptions) {
+    configureConfigLayouts(options.configLayouts ?? [])
     adminRuntime.dev = options.dev ?? false
     adminRuntime.requestHooks = {...options.requestHooks}
     request.defaults.baseURL = options.apiBaseURL
@@ -60,3 +65,12 @@ export {default as FormNote} from './components/FormNote.vue'
 export {default as PageHeader} from './components/PageHeader.vue'
 export {default as TableTime} from './components/TableTime.vue'
 export {default as IconSelect} from './components/IconSelect.vue'
+
+export {default as ConfigField} from './components/ConfigField.vue'
+export type {ConfigForm, ConfigLayout, ConfigLayoutProps} from './configLayouts'
+export type {ConfigValue} from './apis/sys_config'
+
+export {default as FileUpload} from './components/FileUpload.vue'
+export {SysFileApi} from './apis/sys_file'
+export type {ManagedFile, UploadPolicy, UploadSession} from './apis/sys_file'
+export type {StorageOption} from './apis/sys_storage'

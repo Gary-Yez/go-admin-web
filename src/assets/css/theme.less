@@ -34,6 +34,20 @@ html.dark{
   --el-fill-color-darker: #53627b;
   --el-fill-color-blank: var(--el-bg-color);
 
+  // 空状态插图沿用灰蓝层次，覆盖组件自带的近黑色深色配色。
+  .el-empty {
+    --el-empty-fill-color-0: #8b9bb1;
+    --el-empty-fill-color-1: #788ba5;
+    --el-empty-fill-color-2: #63758e;
+    --el-empty-fill-color-3: #414e61;
+    --el-empty-fill-color-4: #586b85;
+    --el-empty-fill-color-5: #4c5d74;
+    --el-empty-fill-color-6: #53667f;
+    --el-empty-fill-color-7: #3b485a;
+    --el-empty-fill-color-8: #46566e;
+    --el-empty-fill-color-9: #3e4d63;
+  }
+
   // 状态色的浅色变体在深色模式下使用灰蓝底色，避免出现黑色色块。
   .status-colors(@name; @color){
     --el-color-@{name}: @color;

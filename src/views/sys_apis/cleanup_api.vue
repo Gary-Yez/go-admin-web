@@ -1,35 +1,43 @@
 <template>
-  <FormDialog v-model="cleanupShow" title="清理失效 API" :max-width="900" size="default" confirm-btn-text="确认清理" confirm-btn-type="danger" :on-confirm="handleConfirm">
+  <FormDialog v-model="cleanupShow" :max-width="900" :on-confirm="handleConfirm" confirm-btn-text="确认清理" confirm-btn-type="danger"
+              size="default" title="清理失效 API">
     <template #default>
-      <DeleteNotice subject="失效 API" :count="tableData.length" description="清理所列接口记录及对应角色授权，不会修改后端路由代码。" />
+      <DeleteNotice :count="tableData.length" description="清理所列接口记录及对应角色授权，不会修改后端路由代码。"
+                    subject="失效 API"/>
       <div v-if="listError" class="mb-[12px]">
-        <el-alert :title="listError" type="error" :closable="false" show-icon />
+        <el-alert :closable="false" :title="listError" show-icon type="error"/>
       </div>
       <el-card header="失效 API" shadow="never">
-        <ColumnTable :column-settings="false" storage-key="core/views/sys_apis/cleanup_api:table-1" size="large" :data="tableData" v-loading="pageLoading || deleting">
-          <template #toolbar><el-button icon="Refresh" :loading="pageLoading" :disabled="deleting" @click="getPageData">刷新</el-button></template>
+        <ColumnTable v-loading="pageLoading || deleting" :column-settings="false" :data="tableData"
+                     size="large" storage-key="core/views/sys_apis/cleanup_api:table-1">
+          <template #toolbar>
+            <el-button :disabled="deleting" :loading="pageLoading" icon="Refresh" @click="getPageData">刷新</el-button>
+          </template>
           <el-table-column label="API路径" prop="path"></el-table-column>
           <el-table-column label="分组" prop="group"></el-table-column>
           <el-table-column label="描述" prop="description"></el-table-column>
-          <el-table-column label="请求" prop="method" :width="100">
+          <el-table-column :width="100" label="请求" prop="method">
             <template #default="{ row }">
               <el-tag :type="MethodType[row.method] || 'warning'">{{ row.method }}</el-tag>
             </template>
           </el-table-column>
-        <template #empty><el-empty v-if="!pageLoading" :description="listError ? '加载失败，请刷新重试' : '没有需要清理的失效 API'" :image-size="70" /></template>
+          <template #empty>
+            <el-empty v-if="!pageLoading" :description="listError ? '加载失败，请刷新重试' : '没有需要清理的失效 API'"
+                      :image-size="70"/>
+          </template>
         </ColumnTable>
       </el-card>
     </template>
   </FormDialog>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import DeleteNotice from "../../components/DeleteNotice.vue";
 import ColumnTable from "../../components/ColumnTable.vue";
 import {ref} from "vue";
-import {SysApisApi} from "../../apis/sys_apis.ts";
+import {SysApisApi} from "../../apis/sys_apis";
 import {ElMessage} from "element-plus";
-import {MethodType} from "./method_type.ts";
+import {MethodType} from "./method_type";
 import FormDialog from "../../components/FormDialog.vue";
 
 const emits = defineEmits(["cleaned"])
@@ -37,7 +45,7 @@ const cleanupShow = ref(false)
 const pageLoading = ref(false)
 const deleting = ref(false)
 const listError = ref('')
-const tableData = ref<Array<{id:number,path:string,method:string,group:string,description:string}>>([])
+const tableData = ref<Array<{ id: number, path: string, method: string, group: string, description: string }>>([])
 let listRequest = 0
 
 const getPageData = async () => {
@@ -66,7 +74,7 @@ const handleConfirm = async () => {
   }
   deleting.value = true
   try {
-    const ids = tableData.value.map(item=>item.id)
+    const ids = tableData.value.map(item => item.id)
     if (ids.length > 0) {
       await SysApisApi.Delete(ids)
       tableData.value = []
@@ -81,7 +89,7 @@ const handleConfirm = async () => {
 }
 
 defineExpose({
-  show(){
+  show() {
     cleanupShow.value = true
     getPageData()
   }

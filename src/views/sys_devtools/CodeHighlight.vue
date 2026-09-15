@@ -1,9 +1,9 @@
 <template>
-  <pre class="code-highlight"><code class="hljs" :class="`language-${language}`" v-html="highlightedCode"></code></pre>
+  <pre class="code-highlight"><code :class="`language-${language}`" class="hljs" v-html="highlightedCode"></code></pre>
 </template>
 
-<script setup lang="ts">
-import { computed } from 'vue'
+<script lang="ts" setup>
+import {computed} from 'vue'
 import hljs from 'highlight.js/lib/core'
 import go from 'highlight.js/lib/languages/go'
 import typescript from 'highlight.js/lib/languages/typescript'
@@ -22,12 +22,22 @@ const props = defineProps<{ code: string; path: string }>()
 const language = computed(() => {
   const extension = props.path.split('.').pop()?.toLowerCase()
   switch (extension) {
-    case 'go': return 'go'
-    case 'ts': case 'tsx': return 'typescript'
-    case 'js': case 'jsx': return 'javascript'
-    case 'vue': case 'html': case 'xml': return 'xml'
-    case 'css': return 'css'
-    default: return 'plaintext'
+    case 'go':
+      return 'go'
+    case 'ts':
+    case 'tsx':
+      return 'typescript'
+    case 'js':
+    case 'jsx':
+      return 'javascript'
+    case 'vue':
+    case 'html':
+    case 'xml':
+      return 'xml'
+    case 'css':
+      return 'css'
+    default:
+      return 'plaintext'
   }
 })
 
@@ -39,7 +49,7 @@ const highlightedCode = computed(() => {
   if (language.value === 'plaintext') return escapeCode(props.code)
   try {
     // Only render escaped highlighter output, never the source code as HTML.
-    return hljs.highlight(props.code, { language: language.value, ignoreIllegals: true }).value
+    return hljs.highlight(props.code, {language: language.value, ignoreIllegals: true}).value
   } catch {
     return escapeCode(props.code)
   }
@@ -47,6 +57,18 @@ const highlightedCode = computed(() => {
 </script>
 
 <style scoped>
-.code-highlight { margin: 0; font: 13px/1.6 Consolas, 'Courier New', monospace; tab-size: 4; white-space: pre; }
-.code-highlight > code.hljs { display: block; padding: 0; overflow: visible; background: transparent; font: inherit; }
+.code-highlight {
+  margin: 0;
+  font: 13px/1.6 Consolas, 'Courier New', monospace;
+  tab-size: 4;
+  white-space: pre;
+}
+
+.code-highlight > code.hljs {
+  display: block;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  font: inherit;
+}
 </style>
