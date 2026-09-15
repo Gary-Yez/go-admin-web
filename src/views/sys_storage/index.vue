@@ -66,7 +66,7 @@
           <el-input :model-value="String(form.params[field.key])" size="large" :type="field.secret ? 'password' : 'text'"
                     :show-password="field.secret" :disabled="inUse && field.location"
                     :placeholder="field.secret && form.id ? '留空保留原值，填写则替换' : field.placeholder"
-                    autocomplete="off" @update:model-value="value => setParam(field.key, value)"/>
+                    autocomplete="off" @update:model-value="(value: string) => setParam(field.key, value)"/>
         </el-form-item>
         <el-form-item v-if="form.engine === 's3'" label="路径式访问">
           <el-switch v-model="form.params.path_style" :disabled="inUse"/><span class="storage-hint">MinIO 可按部署设置开启</span>

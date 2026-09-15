@@ -83,6 +83,17 @@ body{
   }
 }
 
+// 工具栏和筛选栏按钮统一使用中等尺寸，避免继承表单的大尺寸。
+.column-table-actions .el-button,
+.search-form .el-button,
+.config-actions .el-button {
+  --el-button-size: 32px;
+  height: var(--el-button-size);
+  padding: 8px 15px;
+  font-size: var(--el-font-size-base);
+  border-radius: var(--el-border-radius-base);
+}
+
 // 列表筛选栏，供系统页面和生成页面复用。
 .search-form{
   display: flex;

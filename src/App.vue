@@ -5,9 +5,9 @@
 </template>
 
 <script lang="ts" setup>
-import {useUserStore} from "./stores/user.ts";
+import {useUserStore} from "./stores/user";
 import {onMounted, watch} from "vue";
-import {useSiteStore} from "./stores/site.ts";
+import {useSiteStore} from "./stores/site";
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 const userStore = useUserStore()
