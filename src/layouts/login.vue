@@ -2,7 +2,7 @@
   <main class="login-page">
     <section aria-labelledby="login-title" class="login-card">
       <div class="login-brand">
-        <img :src="siteStore.info.logo || '/logo.png'" alt="" height="36" width="36">
+        <img :src="siteStore.logoURL" alt="" height="36" width="36">
         <span>{{ siteStore.info.name || 'Go Admin' }}</span>
       </div>
       <div class="login-heading">

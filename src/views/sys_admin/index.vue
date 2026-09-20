@@ -36,7 +36,7 @@
       <el-table-column :width="100" label="编号" prop="id" sortable="custom"></el-table-column>
       <el-table-column :width="100" label="头像" prop="avatar">
         <template #default="{ row }">
-          <el-avatar :src="row.avatar || '/img/user.png'"></el-avatar>
+          <el-avatar :src="row.avatar || userStore.defaultAvatarURL"></el-avatar>
         </template>
       </el-table-column>
       <el-table-column label="昵称" prop="nickname"></el-table-column>

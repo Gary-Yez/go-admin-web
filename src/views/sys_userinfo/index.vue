@@ -6,7 +6,7 @@
     <div class="profile-layout">
       <el-card class="profile-card" shadow="never">
         <div class="profile-identity">
-          <el-avatar :size="112" :src="userStore.UserData.avatar || '/img/user.png'"/>
+          <el-avatar :size="112" :src="userStore.avatarURL"/>
           <div class="profile-name">
             <h3>{{ userStore.UserData.nickname || userStore.UserData.username }}</h3>
             <el-button :icon="EditPen" aria-label="修改昵称" text @click="openInfo('nickname')"/>
@@ -48,7 +48,7 @@
           <template #default="{ select, canSelect, uploading, processing, progress, error, loading, reload, storageId }">
             <div class="setting-row avatar-setting">
               <div class="setting-label"><h4>头像</h4><p>支持 JPG、PNG，最大 5 MiB</p></div>
-              <div class="setting-value"><el-avatar :size="40" :src="userStore.UserData.avatar || '/img/user.png'"/></div>
+              <div class="setting-value"><el-avatar :size="40" :src="userStore.avatarURL"/></div>
               <el-button :disabled="!canSelect || !storageId || savingAvatar" :loading="uploading || savingAvatar || loading" @click="avatarError = ''; select()">
                 {{ savingAvatar ? '正在保存' : '更换头像' }}
               </el-button>

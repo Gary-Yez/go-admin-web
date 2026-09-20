@@ -7,6 +7,7 @@ import {SysAuthApi} from "../apis/sys_auth";
 
 export const useUserStore = defineStore("sys_user", {
     state: () => ({
+        defaultAvatarURL: './img/user.png',
         AccessToken: localStorage.getItem("access_token") || "",
         IsLogin: false,
         SwitchingRole: false,
@@ -80,6 +81,7 @@ export const useUserStore = defineStore("sys_user", {
         }
     },
     getters:{
+        avatarURL: (state): string => state.UserData.avatar || state.defaultAvatarURL,
         UserMenu(state):Array<any>{
             let menus:any = [...(state.UserData?.role?.menus || [])]
             if (adminRuntime.dev){

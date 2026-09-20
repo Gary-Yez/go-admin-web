@@ -4,7 +4,7 @@
       <div class="header-inner">
         <div class="header-left">
           <div class="logo">
-            <img :src="siteStore.info.logo || '/logo.png'" alt="" class="logo-img">
+            <img :src="siteStore.logoURL" alt="" class="logo-img">
             <div :title="siteStore.info.name" class="logo-text">{{ siteStore.info.name || 'Go Admin' }}</div>
           </div>
           <button :aria-expanded="!sidebarCollapsed" :aria-label="sidebarCollapsed ? '展开菜单' : '收起菜单'" :title="sidebarCollapsed ? '展开菜单' : '收起菜单'"
@@ -51,7 +51,7 @@
                        @command="handleCommand" @visible-change="(visible:boolean)=>accountMenuOpen = visible">
             <button :aria-expanded="accountMenuOpen" :class="{'is-open':accountMenuOpen}" aria-haspopup="menu" aria-label="用户菜单"
                     class="account-trigger" type="button">
-              <el-avatar :size="32" :src="userStore.UserData.avatar || '/img/user.png'"/>
+              <el-avatar :size="32" :src="userStore.avatarURL"/>
               <span class="account-trigger-name">{{ userStore.UserData.nickname || userStore.UserData.username }}</span>
               <el-icon class="account-arrow">
                 <ArrowDown/>

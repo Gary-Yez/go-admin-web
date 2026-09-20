@@ -4,10 +4,14 @@ import {SysConfigApi, type SiteInfo} from "../apis/sys_config";
 export const useSiteStore = defineStore('sys_site', {
     state: () => ({
         info: {
-            name: 'Go Admin', logo: '/logo.png', favicon: '/logo.png',
+            name: 'Go Admin', logo: './logo.png', favicon: './logo.png',
             title: 'Go Admin 管理后台', copyright: '',
         } as SiteInfo,
     }),
+    getters: {
+        logoURL: (state): string => state.info.logo || './logo.png',
+        faviconURL: (state): string => state.info.favicon || './logo.png',
+    },
     actions: {
         async load() {
             try {
