@@ -1,5 +1,9 @@
 # @gary-yez/go-admin-web
 
+导航：[项目介绍](#1-项目介绍) · [系统功能](#2-系统功能) · [安装与引用](#3-安装与引用) · [公开导出与用法](#4-全部公开导出与实际用法) · [注意事项](#5-使用注意事项与升级) · [文档维护](#6-文档维护约定)
+
+## 1. 项目介绍
+
 go-admin 的公共前端包，包含系统页面、后台布局、菜单路由、登录状态、网络请求和业务通用组件。业务项目保留自己的页面，通过公开入口接入，不需要复制系统页面。
 
 - Vue 3 + TypeScript + Element Plus，内置深浅主题、标签页和可折叠菜单。
@@ -9,7 +13,33 @@ go-admin 的公共前端包，包含系统页面、后台布局、菜单路由�
 
 后端接口来自 [go-admin](https://github.com/Gary-Yez/go-admin)。完整宿主项目见 [go-admin-template](https://github.com/Gary-Yez/go-admin-template)。
 
-## 安装与运行环境
+本文面向模板使用者与辅助开发的 AI，按系统功能、引用方式、公开导出及注意事项查阅。公开范围由 package.json 的 exports 和 src/index.ts 决定；源码文件中的 export 不等于包根可引用。本说明对应所在分支/Tag，旧版本应切换到对应 Tag 核对。
+
+## 2. 系统功能
+
+| 功能 | 已提供页面与交互 | 接入条件 |
+| --- | --- | --- |
+| 登录与个人资料 | 登录、当前用户、头像上传、资料与密码修改、退出 | 配套身份接口，头像需要存储账号与上传权限 |
+| 多角色与工作台 | 角色切换、角色默认首页、菜单与标签页、折叠导航 | 菜单由后端角色返回，切换后重建会话页面 |
+| 管理员 | 管理员列表、编辑、状态及角色管理 | 对应菜单与 API 权限 |
+| 角色 | 角色维护、菜单授权、接口授权、默认首页 | 对应菜单与 API 权限 |
+| 菜单 | 菜单层级、图标、组件与路径维护 | 系统页面和业务页面使用不同组件 Key |
+| API 管理 | 接口列表、筛选和无效接口清理 | 受保护路由由后端同步 |
+| API 密钥 | 个人密钥及密钥管理页面 | 后端密钥接口与权限 |
+| 登录日志 | 登录记录查询与清理 | 对应菜单与 API 权限 |
+| 配置管理 | 按组编辑配置、校验、保存、恢复默认、缓存同步和无效项清理 | 类型与默认值由后端定义，可扩展配置布局 |
+| 计划任务 | 任务配置、参数、执行和日志页面 | 后端已注册处理函数 |
+| 节点监控 | 节点状态和资源指标展示 | 后端节点监控接口 |
+| 文件列表 | 普通/分片上传、进度、暂停续传、预览、下载和删除 | 后端文件模块、上传策略及启用的存储账号 |
+| 存储管理 | 本地、COS、OSS、S3 账号维护、启停与默认账号 | 存储管理权限；凭据仅由后端处理 |
+| 开发工具 | CRUD 生成、预览、生成历史、配置定义 | 前端 dev 显示入口，后端 server.dev 决定接口是否开放 |
+| 公共界面 | 深浅主题、统一请求与错误提示、表格列设置、表单和删除确认 | 使用包入口与 style，沿用宿主构建配置 |
+
+这些页面通过框架菜单与路由使用，不需要复制进业务项目，也不作为独立 Vue 页面从包根导出。前端可见性不代替后端鉴权。
+
+## 3. 安装与引用
+
+### 安装与运行环境
 
 本包发布 **Vue / TypeScript / Less 源码**，不是可直接放进 script 标签的独立脚本。宿主负责 Vite 编译、样式处理和产物输出。最快的接入方式是使用模板已有的构建配置和锁文件。
 
@@ -34,7 +64,17 @@ yarn add @gary-yez/go-admin-web
 
 Vue、Pinia、Router、Element Plus、Axios 应由宿主与本包共用同一份运行依赖，不要创建另一套状态或请求实例。升级时同时检查 peer 范围和对应的 go-admin 后端版本。
 
-## 创建应用
+### 公开引用入口
+
+```ts
+import '@gary-yez/go-admin-web/style'
+import {createAdminApp, request, ColumnTable, FormDialog} from '@gary-yez/go-admin-web'
+import type {AdminOptions, ManagedFile} from '@gary-yez/go-admin-web'
+```
+
+按需选择导入；组件需要在 `<script setup>` 中导入或由宿主注册。仅有包根与 `/style` 两个公开入口；不要深层导入 `src/views`、内部 API、运行容器或路由。系统功能通过公开组件、Store、请求实例与扩展回调使用。
+
+### 创建应用
 
 宿主 `src/pages.ts`：
 
@@ -80,10 +120,11 @@ if (import.meta.hot) {
 | `mount?: string \| Element` | 挂载目标，默认 #app |
 | `setup?: (app: App) => void` | 同步执行的 Vue 扩展回调 |
 | `requestHooks?: RequestHooks` | 请求发送前、成功业务响应后的同步或异步扩展 |
+| `configLayouts?: ConfigLayout[]` | 配置分组的自定义布局，默认空数组 |
 
 创建方法返回 `{app, router, pinia}`，不表示登录资料已经加载。一个页面只创建一个管理端应用；包内部请求实例和路由是共享的。
 
-### 生命周期
+#### 生命周期
 
 1. 设置运行模式、请求 baseURL，注册业务页面。
 2. 处理记住账号信息，创建 Vue 应用和 Pinia。
@@ -95,7 +136,7 @@ if (import.meta.hot) {
 
 setup 不是异步启动钩子；需要等待的宿主准备工作应在 createAdminApp 之前完成。角色切换会加载新身份、重建菜单并重置页面会话，业务页面应做好卸载清理和取消请求处理。
 
-## 宿主构建配置
+### 宿主构建配置
 
 Vite 至少要处理自定义图标标签、源码包预构建和重复依赖。以下配置与模板的接入方式一致，保留宿主自身其他配置即可：
 
@@ -156,7 +197,7 @@ export default {
 
 本包使用浏览器 localStorage、DOM 等能力，接入示例面向浏览器 SPA。不要在服务端直接执行 createAdminApp。
 
-## 业务页面与菜单
+### 业务页面与菜单
 
 `ComponentModules` 是 `Record<string, ComponentLoader>`，加载器返回组件或 `{default: Component}`。业务页面路径必须以 `./views/` 或 `../views/` 开头。
 
@@ -173,7 +214,36 @@ export default {
 
 路由采用 Hash 模式。页面文件存在、菜单已建立、角色有菜单权限，才能通过框架菜单访问；接口权限仍由后端单独验证。默认菜单来自当前角色配置，业务不要在页面中再次写死登录落点。
 
-## 请求接口
+## 4. 全部公开导出与实际用法
+
+### 导出索引
+
+| 类别 | 包根全部导出 | 查阅方式 |
+| --- | --- | --- |
+| 应用与页面 | `createAdminApp`、`AdminOptions`、`registerAdminPages`、`ComponentModules`、`ComponentLoader` | 上文创建应用、页面注册及下方类型表 |
+| 请求 | `request`、`RequestHooks`、`AdminContext` | 请求接口、追加请求处理 |
+| Store | `useUserStore`、`useCommonStore`、`useSiteStore` | 状态接口 |
+| 工具函数 | `confirmDelete`、`defaultSortFields`、`formatTime`、`copyText` | 删除确认、排序和工具示例 |
+| 通用组件 | `ColumnTable`、`FormDialog`、`FormNote`、`PageHeader`、`TableTime`、`IconSelect` | 公共组件 |
+| 配置扩展 | `ConfigField`（组件）、`ConfigForm`、`ConfigLayout`、`ConfigLayoutProps`、`ConfigValue` | 自定义配置分组布局 |
+| 文件管理 | `FileUpload`、`SysFileApi`、`ManagedFile`、`UploadPolicy`、`UploadSession`、`StorageOption` | 文件上传、文件 API 与类型 |
+| 样式子路径 | `@gary-yez/go-admin-web/style` | 副作用导入公共样式，不是函数或组件 |
+
+没有列入包根导出的 `SysAuthApi`、`SysStorageApi`、`FileQuery`、`formatFileSize`、`DeleteNotice`、`adminRuntime` 等属于内部实现。需要业务接口时在宿主 `src/apis/<module>.ts` 中调用公开 request，不复制内部模块或凭名称猜测导出。
+
+`ComponentLoader = () => Promise<Component | {default: Component}>`，`ComponentModules = Record<string, ComponentLoader>`。使用方式：
+
+```ts
+import {registerAdminPages} from '@gary-yez/go-admin-web'
+import type {ComponentModules} from '@gary-yez/go-admin-web'
+
+const pages: ComponentModules = {
+  './views/product/index.vue': () => import('./views/product/index.vue'),
+}
+registerAdminPages(pages) // 替换全部业务页面映射，不能只传本次新增页面
+```
+
+### 请求接口
 
 `request` 是已配置拦截器的 Axios 实例。必须在应用安装 Pinia 后使用，通常在组件或业务函数执行时调用，避免模块导入时直接发请求。
 
@@ -184,9 +254,9 @@ interface Product { id: number; name: string }
 interface Result<T> { code: number; message: string; data: T }
 
 export function listProducts() {
-  return request.get<unknown, Result<{list: Product[]; total: number}>>(
+  return request.post<unknown, Result<{list: Product[]; total: number}>>(
     '/product/list',
-    {params: {page: 1, limit: 10}},
+    {page: 1, limit: 10, filters: [], sorts: []},
   )
 }
 ```
@@ -202,9 +272,9 @@ export function listProducts() {
 
 框架仅为自身公开入口配置匿名请求例外。新增匿名业务接口如果复用 request，不能假设无登录时一定放行；需要单独设计匿名请求入口。普通后台业务接口继续复用 request。
 
-### 列表筛选与排序
+#### 列表筛选与排序
 
-GET 参数中的 filters/sorts 按现有接口使用重复参数传递 JSON 字符串：
+生成器创建的列表接口使用 POST，直接发送 `{page, limit, filters, sorts}` JSON。若业务另外注册了 GET 列表接口，filters/sorts 才按查询参数方式传递 JSON 字符串，例如：
 
 ```ts
 return request.get('/product/list', {
@@ -224,7 +294,7 @@ return request.get('/product/list', {
 
 筛选输入框失焦查询，选择器变化查询，重置后回到第一页；时间筛选使用起止范围。不要把 Element Plus 的 ascending/descending 原样发给后端，应转换成 asc/desc。
 
-## 公共组件
+### 公共组件
 
 以下组件均从包根导入，不要引用包内未公开的文件路径。
 
@@ -265,7 +335,56 @@ FormDialog 默认宽度上限 500、表单 size 为 large、Esc 可关闭、点�
 
 确认时组件先验证表单、等待 onConfirm，成功后关闭，失败保留表单。关闭会清空 form 并重置字段；业务不要依赖关闭后的 form 数据。description / noteIcon 可显示表单说明。
 
-## 删除确认与工具函数
+#### 组件参数、事件与插槽
+
+| 组件 | 全部自有参数 / 默认值 | 事件、插槽与方法 |
+| --- | --- | --- |
+| PageHeader | `title: string` 必填；`description?: string` | default 插槽，图标来自当前路由 meta |
+| ColumnTable | `storageKey: string` 必填；`columnSettings: boolean = true` | toolbar 插槽，其余 el-table 属性、事件和插槽透传；不承诺公开 el-table 的 ref 方法 |
+| FormDialog | title=""、description?、noteIcon?；onConfirm?: () => Promise<void>；closeOnClickModal=false、closeOnPressEscape=true、destroyOnClose=false；maxWidth=500；size='large'；confirmBtnType='primary'；confirmBtnText='确认'；cancelBtnText='取消' | `v-model` 默认 false，`v-model:form` 默认 {}；default 插槽提供 `{formRef}`，校验规则放 el-form-item |
+| FormNote | title、description 为必填 string；icon='InfoFilled' | 无自定义事件或方法 |
+| TableTime | value?: string/number/Date/null；emptyText='—'；suffix?: string | 无自定义事件或方法；无效时间显示 emptyText，数字按毫秒 |
+| IconSelect | `v-model` 为图标标识，例如 iconoir:box | 通过 update:modelValue 更新，选择器内置搜索与分页 |
+| ConfigField | configKey: string、fields: ConfigValue[]、form: ConfigForm，均必填 | 通过 form 读写与保存，不额外创建表单状态 |
+| FileUpload | target?、policy?、storages?、autoUpload=true、disabled=false、allowedExtensions?、maxSize? | 完整事件、插槽及 ref 方法见文件上传小节 |
+
+FormDialog 的 size 可用 large/default/small，confirmBtnType 可用 primary/danger；title、description、noteIcon 和按钮文案为字符串。提交失败应让 onConfirm 拒绝；如果业务自己吞掉异常并正常返回，组件会认为提交成功而关闭。
+
+表单与展示组件组合示例，业务 API 放在 `src/apis/product.ts` 并提供返回 Promise 的 `ProductApi.Create`：
+
+```vue
+<script setup lang="ts">
+import {ref} from 'vue'
+import {FormDialog, FormNote, IconSelect, TableTime} from '@gary-yez/go-admin-web'
+import {ProductApi} from '../../apis/product'
+
+const visible = ref(false)
+const form = ref<{name?: string; icon?: string}>({})
+function openCreate() {
+  form.value = {name: '', icon: 'iconoir:box'}
+  visible.value = true
+}
+async function save() {
+  await ProductApi.Create({name: form.value.name, icon: form.value.icon})
+}
+</script>
+
+<template>
+  <FormNote title="商品资料" description="填写业务所需信息。" />
+  <el-button @click="openCreate">新增</el-button>
+  <FormDialog v-model="visible" v-model:form="form" title="新增商品" :on-confirm="save">
+    <el-form-item prop="name" label="名称" :rules="[{required: true, message: '请输入名称', trigger: 'blur'}]">
+      <el-input v-model="form.name" />
+    </el-form-item>
+    <el-form-item label="图标"><IconSelect v-model="form.icon" /></el-form-item>
+  </FormDialog>
+  <TableTime :value="Date.now()" suffix="本地时间" />
+</template>
+```
+
+这是组件接入示例，ProductApi 为宿主业务代码，须与后端实际字段对齐；FormDialog 关闭会将 form 清为空对象，因此示例字段声明为可选。
+
+### 删除确认与工具函数
 
 ```ts
 import {confirmDelete, request} from '@gary-yez/go-admin-web'
@@ -281,11 +400,21 @@ await confirmDelete({
 })
 ```
 
-subject、count、onConfirm 必填，description、target 可选。组件管理提交状态，删除失败保留弹窗；取消会正常结束 Promise，因此把依赖删除成功的刷新放进 onConfirm。内部 DeleteNotice 不是公开组件。
+subject: string、count: number、onConfirm: () => Promise<unknown> 必填，description?: string、target?: string、extraContent?: () => VNodeChild 可选。extraContent 用于额外确认内容，例如“仅删除记录”选项。返回 Promise<void>；count <= 0 直接结束。组件管理提交状态，删除失败保留弹窗；取消会正常结束 Promise，因此把依赖删除成功的刷新放进 onConfirm。内部 DeleteNotice 不是公开组件，参数类型可用 Parameters<typeof confirmDelete>[0] 推导。
 
 `formatTime(time: number)` 将毫秒时间戳格式化为本地年月日时分秒。`copyText(text: string)` 复制内容并统一提示结果。
 
-## 状态接口
+```ts
+import {defaultSortFields, formatTime, copyText} from '@gary-yez/go-admin-web'
+
+const sortFields = defaultSortFields({productName: 'name'})
+const displayTime: string = formatTime(Date.now()) // YYYY-MM-DD HH:mm:ss，本地时区
+await copyText(displayTime) // Promise<void>，内部处理复制结果提示
+```
+
+`defaultSortFields(extra: Record<string,string> = {})` 返回新的 Record<string,string>；`formatTime` 返回 string，调用方传有效毫秒时间戳。`copyText` 内部有 Clipboard 降级逻辑，Promise 正常结束不构成“已成功复制”的业务凭证。
+
+### 状态接口
 
 | Store | 常用状态和操作 |
 | --- | --- |
@@ -297,11 +426,28 @@ UserStore 还暴露 AccessToken、setAccessToken、setUserData；普通页面优
 
 不要在每个业务页面挂载时重复请求当前用户；登录恢复由路由守卫处理。需要导航可用 Vue Router 的 useRouter，或 createAdminApp 返回的 router。
 
-## 构建与升级
+各 Store 的全部自有状态、getter 和 action：
 
-本包由宿主执行类型检查和构建，例如模板中的 `yarn build`。仅安装 npm 包不会产生可部署管理端。
+| Store | 状态 / getter | action 签名与行为 |
+| --- | --- | --- |
+| useUserStore | defaultAvatarURL string、AccessToken string、IsLogin bool、SwitchingRole bool、SessionVersion number、UserData；getter avatarURL string、UserMenu any[] | setAccessToken(payload: string): void 写令牌及本地存储；setUserData(payload: Object): void 更新资料并标记登录；getUserData(): Promise<void> 请求当前资料；switchRole(roleId: number): Promise<void> 切换并重建菜单；logout(showMessage=true): Promise<void> 清理本地会话并跳转 |
+| useSiteStore | info 的 name/title/logo/favicon/copyright 均为 string；getter logoURL、faviconURL 提供默认资源回退 | load(): Promise<void> 加载站点信息，失败保留现有展示 |
+| useCommonStore | isDev boolean、currentTime string、theme string | setTime(): void 更新一次时间；setTheme(theme?: string): void 设置/应用主题，业务使用 light/dark，省略参数仅应用当前主题 |
 
-升级公共前端后，重新编译宿主并部署新产物；已生成的业务 Vue 文件仍属于业务项目，不会被 npm 升级自动重写。升级后端接口时同步检查前端版本、菜单组件 Key 和 peerDependencies，提交更新后的锁文件。
+UserData 字段均可选：id、role_id 为 number，roles 为 `{id:number;name:string}[]`，avatar/username/nickname/phone/email 为 string，avatar_file_id 为 number/null，role 含 id、name、default_menu?、menus。以服务器返回资料为准，未登录时可能为空对象；SessionVersion 用于会话切换，不应由普通页面自行增加。上表 bool 表示 TypeScript boolean，Pinia 自带的 $patch 等方法不属于本包自定义 API。
+
+```ts
+import {storeToRefs} from 'pinia'
+import {useUserStore, useSiteStore, useCommonStore} from '@gary-yez/go-admin-web'
+
+const user = useUserStore()
+const {UserData, avatarURL} = storeToRefs(user)
+const site = useSiteStore()
+const common = useCommonStore()
+common.setTheme('dark')
+// 用户主动操作时：await user.switchRole(roleId)、await user.logout()
+// 需要刷新站点信息时：await site.load()
+```
 
 ### 追加请求处理
 
@@ -332,9 +478,25 @@ createAdminApp({
 
 两个回调的第二个参数均为公开类型 AdminContext，提供只读属性 pinia、router、dev。业务 Store 可通过 useYourStore(context.pinia) 获取，路由通过 context.router 使用。上下文不暴露请求实例、拦截器编号或清理函数。
 
+公开类型签名（类型从包根导入）：
+
+```ts
+interface AdminContext {
+  readonly pinia: Pinia
+  readonly router: Router
+  readonly dev: boolean
+}
+interface RequestHooks {
+  beforeRequest?: (config: InternalAxiosRequestConfig, context: AdminContext) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>
+  afterResponse?: (data: any, context: AdminContext) => any | Promise<any>
+}
+```
+
+这里的 Pinia、Router、InternalAxiosRequestConfig 分别来自 pinia、vue-router、axios，是签名说明，不需要业务重复声明这两个接口。
+
 只读属性禁止替换实例，仍允许正常修改 Store 和调用 router.push()。context.dev 会读取当前运行配置。模板 main.ts 默认保留空的 requestHooks 和注释示例，无需扩展时保持为空即可。
 
-## 自定义配置分组布局
+### 自定义配置分组布局
 
 通过 createAdminApp 的 configLayouts 注册 Vue 组件，可以替换单个分组或合并多个分组。未声明的分组继续使用默认表单。存储账号由独立的存储管理页面维护，不再占用系统配置分组；自定义分组布局能力保持可用。
 
@@ -354,7 +516,7 @@ createAdminApp({
 })
 ```
 
-groups 对应后端配置定义的分组名称，不修改数据库。自定义布局优先于内置布局；一个分组只能被一个自定义布局声明，标题也不能重复。分组名称变更后应同步注册项。无效配置不使用自定义布局，始终用默认表单展示。
+groups 对应后端配置定义的分组名称，不修改数据库。自定义布局优先于内置布局；一个分组只能被一个自定义布局声明，标题也不能重复。空标题、缺少组件/分组、重复标题或分组会在注册时抛错，阻止应用正常创建。分组名称变更后应同步注册项。未注册的无效配置项使用默认表单展示。
 
 自定义组件收到以下 props：
 
@@ -396,21 +558,34 @@ form 提供 getValue、setValue、getError、isDisabled、isChanged、isSaving�
 
 布局组件只负责呈现，列表请求、保存、缓存同步、清理无效项仍由配置管理页面统一处理。注册信息跨热更新保留，不创建第二套请求实例或表单状态。
 
+#### 配置扩展类型
 
-## 文件管理页面
+| 导出类型 | 全部字段 / 方法 |
+| --- | --- |
+| `ConfigLayout` | title: string；groups: string[]；component: Vue Component |
+| `ConfigLayoutProps` | fields: ConfigValue[]；allFields: ConfigValue[]；form: ConfigForm；filtering: boolean |
+| `ConfigForm` | getValue(key: string): any；setValue(key: string, value: any): void；getError(key: string): string；isDisabled/isChanged/isSaving(key: string): boolean；save(key: string): Promise<void>；reset(key: string): void |
+| `ConfigValue` | registered: boolean；group/key/label/description/updated_at: string；type: 'string'/'bool'/'int'/'float64'/'[]string'；control: ''/'textarea'/'password'/'select'/'radio'/'multi-select'；rows: number；options: {label: string; value: string/boolean/number}[]；default/value: string/boolean/number/string[] |
+
+表中斜杠表示类型联合或同类型字段分组。ConfigField 的 configKey 在 fields 中找不到时不渲染。配置定义中的 ConfigField 接口未从包根导出，不能与这里同名的 Vue 组件混淆。
+
+例如在收到 props 的布局组件中，`props.form.setValue('order.timeout', 60)` 修改草稿，`await props.form.save('order.timeout')` 请求保存，然后读取 `getError/isChanged` 展示真实结果；`reset` 仅还原草稿，不写数据库。不要仅凭 await 正常结束提示保存成功。
+
+
+### 文件管理页面
 
 公共前端内置“系统运维 → 文件管理”，包含“文件列表”和“存储管理”两个子菜单，随系统菜单自动加载，无需在模板中复制页面。后端需要使用包含 sys_file 模块的版本，并在角色中配置菜单及对应 API 权限。
 
-页面沿用公共筛选、列选择、分页及删除确认组件。支持单文件上传、图片预览、下载和批量删除；超过 20 MiB 自动按 8 MiB 分片。上传抽屉展示进度，可以暂停，刷新或重启后从列表“继续上传”重新选择原文件；页面核对文件名、大小和修改时间，并跳过服务端已经确认的分片。
+页面沿用公共筛选、列选择、分页及删除确认组件。支持上传、图片/媒体/PDF/文本预览、下载和批量删除；上传阈值和分片大小读取后端策略，当前后端默认超过 100 MiB 分片，每片 20 MiB。上传抽屉展示进度，可以暂停，刷新或重启后从列表“继续上传”重新选择原文件；页面核对文件名、大小和修改时间，并跳过服务端已经确认的分片。
 
-“清理过期上传”删除超过 7 天仍未完成的会话和分片。删除已完成文件也会删除存储对象，业务中引用该文件的位置将不可用。下载地址是 60 秒有效的临时凭证，通过当前请求客户端的 API 基础地址解析，不携带登录令牌。
+“清理过期上传”按会话 expires_at 清理，当前后端默认有效期 1 天，创建后不随配置改变。删除已完成文件默认同时删除存储对象，也支持仅删除记录；业务引用可能失效。预览/下载可能返回公开地址、云存储签名或本地临时凭证，私有链接当前默认 3600 秒；本地相对路径通过统一请求的 API 基础地址解析。具体以服务端配置和返回值为准，不在业务页面写死阈值或有效期。
 
 存储管理支持同一引擎的多个账号，按所选引擎显示配置表单。可以修改名称、凭据、启用状态和默认账号；账号已被文件引用时，页面禁用位置字段，后端也会验证。密码原值不回显，编辑时留空保留。
 
 上传窗口可选择已启用的存储账号，默认选中默认账号；续传固定原账号，不能中途更换。文件列表显示账号名称，并支持按账号筛选。默认账号变化只影响新的默认选择，不改变已有文件归属。
 
 
-### 业务文件上传
+#### 业务文件上传
 
 FileUpload 自动接入文件管理上传接口，加载全局上传配置和存储账号，处理普通上传、分片、进度、暂停、续传与取消。组件不包含抽屉或弹窗，不传插槽时展示默认上传界面；传入默认作用域插槽后，由业务完全自定义界面，上传逻辑保持不变。
 
@@ -497,3 +672,86 @@ select、chooseFile、start、resume、pause、cancel、reset、reload 也通过
 业务限制属于前端交互限制，业务后端仍需校验关联文件的归属、完成状态、大小和真实内容。全局扩展名限制由上传后端强制执行。上传不会自动修改头像字段或其他业务数据。
 
 实际文件预览可调用公开的 SysFileApi.Link(file.id, true)。返回地址可能过期，业务持久化文件 ID，不保存临时地址。上面的头像示例需要预先启用默认存储账号；若没有默认账号，自定义界面应通过 storages 和 setStorage(id) 提供账号选择。
+
+#### SysFileApi 全部方法
+
+除 Link 返回 `Promise<string>` 外，方法均返回 Promise 业务响应体，数据在 `.data`。有明确数据结构的方法在表中标出，其余方法完成时检查统一 request 的成功/失败结果即可。
+
+| 方法签名 | `.data` / 返回值 | 实际用途 |
+| --- | --- | --- |
+| `Options(signal?: AbortSignal)` | `{policy: UploadPolicy; storages: StorageOption[]}` | 加载上传策略和可选账号 |
+| `List(query)` | `{list: ManagedFile[]; total: number; policy: UploadPolicy; storages: StorageOption[]}` | query 含 page、limit 数字，filters: {field, operator, value: string}[]，sorts: {field, order}[] |
+| `Upload(file: File, storageId: number, signal: AbortSignal, onUploadProgress)` | ManagedFile | 普通上传；进度回调 `(event: AxiosProgressEvent) => void` |
+| `Begin(file: File, storageId: number, signal: AbortSignal)` | UploadSession | 创建会话，自动发送文件名/大小/修改时间 |
+| `Session(id: number, signal?: AbortSignal)` | UploadSession | 取得会话、已有分片和固定分片大小 |
+| `Part(id: number, number: number, blob: Blob, signal: AbortSignal, onUploadProgress)` | 成功业务响应 | 按编号上传单片，进度回调同 Upload |
+| `Complete(id: number, signal: AbortSignal)` | ManagedFile | 合并分片，取得完成记录 |
+| `Abort(id: number)` | 成功业务响应 | 取消会话并清理分片 |
+| `Delete(ids: number[], recordsOnly = false)` | 成功业务响应 | 默认连同存储对象删除；true 仅删除数据库记录/回执 |
+| `Cleanup()` | `{count: number}` | 清理已过期的未完成上传 |
+| `Link(id: number, preview = false, signal?: AbortSignal)` | string URL（直接返回） | true 获取预览链接，false 获取下载链接；内部解析相对地址 |
+
+这些方法复用框架鉴权，各自需要对应后端接口权限；Options 不需要文件列表权限。FileQuery 没有包根导出，需要显式类型时可用 `Parameters<typeof SysFileApi.List>[0]`。不要为普通上传重新编写分片状态机，默认使用 FileUpload；SysFileApi 适用于确需控制底层调用的业务。
+
+```ts
+import {SysFileApi} from '@gary-yez/go-admin-web'
+
+const controller = new AbortController()
+const {data: options} = await SysFileApi.Options(controller.signal)
+const {data: listing} = await SysFileApi.List({page: 1, limit: 10, filters: [], sorts: []})
+const first = listing.list.find(file => file.status === 'ready')
+if (first) {
+  const previewURL: string = await SysFileApi.Link(first.id, true, controller.signal)
+  // 交给图片/媒体预览组件；业务只保存 first.id。
+}
+// 主动销毁当前业务流程时：controller.abort()
+```
+
+下列为调用形式，需放在用户明确选择文件或确认删除的业务流程中：
+
+```ts
+await SysFileApi.Upload(file, storageId, controller.signal, event => {
+  progress.value = event.total ? Math.round(event.loaded / event.total * 100) : 0
+})
+await SysFileApi.Delete(selectedIds)       // 删除对象和记录
+await SysFileApi.Delete(selectedIds, true) // 仅删除记录，远端对象需另外管理
+const {data: cleaned} = await SysFileApi.Cleanup()
+```
+
+分片调用顺序为 Begin → Part → Complete；续传先 Session，按其 part_size 切片并跳过 parts 中已收到的编号，取消用 Abort。FileUpload 已实现这条流程以及失败、取消和重新选择文件校验，优先复用。
+
+#### 文件与上传数据类型
+
+| 类型 | 全部字段 | 单位与含义 |
+| --- | --- | --- |
+| `ManagedFile` | id、size、storage_id、user_id、last_modified: number；name、content_type、storage_name、engine、username、created_at、updated_at: string；status: 'uploading'/'ready'；is_owner、multipart: boolean；expires_at: string/null | size 为字节；last_modified 为原文件修改时间毫秒值；业务关联 id，不保存临时 URL |
+| `UploadPolicy` | allowed_extensions: string[]；ordinary_limit、part_size、max_size、session_days: number | 三个大小字段均为字节，session_days 为天；读取服务端策略，不硬编码 |
+| `UploadSession` | file: ManagedFile；parts: {number: number; size: number}[]；part_size: number | 分片编号从 1 开始，size 和 part_size 为字节 |
+| `StorageOption` | id: number；name: string；engine: 'local'/'tencent'/'aliyun'/'s3'；is_default、enabled: boolean | 仅账号选项，不含凭据 |
+
+前端类型体现当前响应结构，不构成可信输入校验。归属、权限、上传完成状态和文件内容仍由后端业务校验。
+
+## 5. 使用注意事项与升级
+
+本包由宿主执行类型检查和构建，例如模板中的 `yarn build`。仅安装 npm 包不会产生可部署管理端。
+
+升级公共前端后，重新编译宿主并部署新产物；已生成的业务 Vue 文件仍属于业务项目，不会被 npm 升级自动重写。升级后端接口时同步检查前端版本、菜单组件 Key 和 peerDependencies，提交更新后的锁文件。
+
+- 本包面向浏览器 SPA，依赖 DOM 与 localStorage；不要在 SSR 服务端直接执行入口。
+- 使用统一应用、路由、Pinia 和 request；扩展请求使用 requestHooks。afterResponse 也影响系统页面，应保留业务响应协议。
+- 新增业务页面要同时注册页面映射并配置后端菜单与角色权限。前端 dev 和菜单可见性不控制后端安全边界。
+- 统一 request 会拒绝业务错误、网络错误与旧会话结果；页面区分错误和主动取消，完成时清理 loading，不吞错后显示成功。
+- FormDialog 关闭会清空表单；confirmDelete 的 Promise 正常结束也可能是取消；ConfigForm.save 和 copyText 内部处理部分错误，不能只凭 Promise 完成判定业务成功。
+- FileUpload 隐藏不等于暂停，销毁或调用 pause 才中止请求；暂停保留会话，取消才清理。大小、分片与有效期遵循服务端策略，文件 ID 与临时地址不要混用。
+- 文件删除可能使业务关联失效；仅删除记录会保留远端对象。公开存储 URL 不会因前端传 preview=false 就必然强制下载，媒体预览还受浏览器编码及存储跨域配置限制。
+- 默认分支文档可能领先于 npm 发布版本，使用新导出前检查当前安装版本；框架内部文件没有包根导出时不得深层导入。
+
+## 6. 文档维护约定
+
+后续 README 始终按“项目介绍 → 系统功能 → 安装与引用 → 全部公开导出与实际用法 → 使用注意事项”组织，服务于独立模板使用者和 AI。新内容放到所属章节，避免文末不断堆叠功能补丁说明。
+
+- 以 package.json 的 exports 和 src/index.ts 为公开清单，覆盖组件、方法、Store、类型与样式入口；内部源码的 export 不冒充公共 API。
+- 每个组件说明导入方式、props 类型/默认值、事件、插槽、v-model 与公开 ref 方法；没有的方法不要暗示可用。方法与类型说明输入、返回值、单位和错误行为。
+- 为每类公开能力提供实际接入示例，写清宿主需准备的页面、API、样式与构建配置；完整示例与片段明确区分。
+- 变更公开能力时同步索引、参数表、示例和注意事项，删除废弃说明。依赖服务端动态策略的值应说明配置来源，不能在多处写死不同默认值。
+- 发布前核对 peerDependencies、源码导出和配套后端协议；未验证的浏览器、上传或构建行为不能写成已验证结果。
