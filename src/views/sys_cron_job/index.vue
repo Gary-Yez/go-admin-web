@@ -86,14 +86,29 @@
         </el-select>
       </el-form-item>
       <template v-if="handlers[submitForm.handler_key]?.params">
-        <el-form-item v-for="item in handlers[submitForm.handler_key]?.params" :label="item.name"
-                      :prop="`params.${item.key}`" :rules="[{required:item.required,message:`${item.name}是必需的`}]">
+        <el-form-item v-for="item in handlers[submitForm.handler_key]?.params" :key="`${submitForm.handler_key}:${item.key}`" :label="item.name"
+                      :prop="['params', item.key]" :rules="paramRules(item)">
           <el-input v-if="item.type === 'string'" v-model="submitForm.params[item.key]" :placeholder="`请输入${item.name}`"
                     size="large"></el-input>
           <el-input-number v-if="item.type === 'int'" v-model="submitForm.params[item.key]" :placeholder="item.name"
                            size="large"></el-input-number>
           <el-switch v-if="item.type === 'bool'" v-model="submitForm.params[item.key]" :active-value="true"
                      :inactive-value="false"></el-switch>
+          <div v-if="item.type === 'array'" class="w-full">
+            <el-select v-model="submitForm.params[item.key]" :loading="paramOptions[item.key]?.loading"
+                       :placeholder="`请选择${item.name}`" class="w-full" clearable filterable multiple
+                       loading-text="正在加载选项" no-data-text="暂无可选项" no-match-text="没有匹配的选项" size="large">
+              <el-option v-for="option in displayOptions(item)" :key="`${typeof option.value}:${option.value}`"
+                         :label="option.label" :value="option.value"/>
+            </el-select>
+            <div v-if="paramOptions[item.key]?.error" class="mt-[6px] text-[var(--el-color-danger)]" role="alert">
+              {{ paramOptions[item.key]?.error }}
+              <el-button link type="primary" @click="loadParamOptions(item)">重试</el-button>
+            </div>
+            <div v-else-if="paramOptions[item.key]?.loaded && !paramOptions[item.key]?.options.length"
+                 class="mt-[6px] text-[var(--el-text-color-secondary)]">暂无可选项</div>
+          </div>
+          <div v-if="item.description" class="mt-[6px] w-full text-[var(--el-text-color-secondary)]">{{ item.description }}</div>
         </el-form-item>
       </template>
       <el-form-item label="执行时区">
@@ -149,12 +164,13 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref, watch} from "vue";
+import {onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {confirmDelete} from "../../utils/confirmDelete";
 import TableTime from "../../components/TableTime.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import ColumnTable from "../../components/ColumnTable.vue";
 import {SysCronJobApi} from "../../apis/sys_cron_job";
+import type {CronHandler, CronParam, CronParamOption} from "../../apis/sys_cron_job";
 import {ElMessage} from "element-plus";
 import FormDialog from "../../components/FormDialog.vue";
 import {cronMethod, needShow, transObjToSpec, transSpecToObj, transSpecToStr, weeks} from "./helper";
@@ -172,12 +188,97 @@ let listRequest = 0
 const pageLoading = ref(true)
 const total = ref(0)
 const multipleSelection: any = ref([])
-const handlers = ref<Record<string, {
-  name: string
-  params?: { name: string; key: string; type: string; required: boolean }[]
-}>>({})
+const handlers = ref<Record<string, CronHandler>>({})
 const tableData = ref([])
 const submitForm: any = ref({})
+const paramOptions = ref<Record<string, {
+  options: CronParamOption[]
+  loading: boolean
+  loaded: boolean
+  error: string
+}>>({})
+const optionRequests = new Map<string, AbortController>()
+let optionsVersion = 0
+
+const cancelOptionRequests = () => {
+  ++optionsVersion
+  optionRequests.forEach(controller => controller.abort())
+  optionRequests.clear()
+}
+
+const loadParamOptions = async (param: CronParam) => {
+  const handlerKey = submitForm.value.handler_key
+  const version = optionsVersion
+  optionRequests.get(param.key)?.abort()
+  const controller = new AbortController()
+  optionRequests.set(param.key, controller)
+  paramOptions.value[param.key] = {options: [], loading: true, loaded: false, error: ''}
+  const isCurrent = () => version === optionsVersion && optionRequests.get(param.key) === controller
+  try {
+    const response = await SysCronJobApi.GetParamOptions(handlerKey, param.key, controller.signal)
+    if (!isCurrent()) return
+    paramOptions.value[param.key] = {options: response.data, loading: false, loaded: true, error: ''}
+  } catch (error) {
+    if (!isCurrent()) return
+    const message = typeof error === 'string' ? error : error instanceof Error ? error.message : ''
+    paramOptions.value[param.key] = {options: [], loading: false, loaded: false, error: message || '选项加载失败，请重试'}
+  } finally {
+    if (isCurrent()) optionRequests.delete(param.key)
+  }
+}
+
+// 保留不在最新选项中的历史值；不把数字转成字符串，也不自动删掉已选值。
+const displayOptions = (param: CronParam): CronParamOption[] => {
+  const state = paramOptions.value[param.key]
+  const options = [...(state?.options ?? [])]
+  const selected = submitForm.value.params?.[param.key]
+  if (Array.isArray(selected)) {
+    for (const value of selected) {
+      if (['string', 'number', 'boolean'].includes(typeof value) && !options.some(option => option.value === value)) {
+        options.push({value, label: state?.loaded ? `未在最新选项中找到（${value}）` : `已选值（${value}）`})
+      }
+    }
+  }
+  return options
+}
+
+const paramRules = (param: CronParam) => [{
+  required: param.required,
+  trigger: 'change',
+  validator: (_rule: unknown, value: unknown, callback: (error?: Error) => void) => {
+    const missing = value === undefined || value === null
+    let message = ''
+    if (param.required && (missing || value === '' || (Array.isArray(value) && value.length === 0))) {
+      message = `${param.name}是必需的`
+    } else if (param.type === 'array' && value !== undefined) {
+      const validItem = (item: unknown) => param.item_type === 'int' ? Number.isSafeInteger(item)
+          : param.item_type === 'string' ? typeof item === 'string'
+              : param.item_type === 'bool' && typeof item === 'boolean'
+      if (!Array.isArray(value) || !value.every(validItem)) message = `${param.name}必须是元素类型正确的数组，整数需在安全范围内`
+    } else if (!missing && ((param.type === 'int' && !Number.isInteger(value))
+        || (param.type === 'string' && typeof value !== 'string')
+        || (param.type === 'bool' && typeof value !== 'boolean'))) {
+      message = `${param.name}的类型不正确`
+    }
+    callback(message ? new Error(message) : undefined)
+  },
+}]
+
+watch([dialogOpen, () => submitForm.value.handler_key], ([open, key], [wasOpen, previousKey]) => {
+  cancelOptionRequests()
+  paramOptions.value = {}
+  if (!open || !key) return
+  if (wasOpen && key !== previousKey) submitForm.value.params = {}
+  for (const param of handlers.value[key]?.params ?? []) {
+    if (submitForm.value.params[param.key] === undefined) {
+      if (param.type === 'array') submitForm.value.params[param.key] = []
+      if (param.type === 'bool') submitForm.value.params[param.key] = false
+    }
+    if (param.type === 'array') void loadParamOptions(param)
+  }
+}, {flush: 'sync'})
+
+onBeforeUnmount(cancelOptionRequests)
 
 const checkCron = (_rule: any, _value: any, callback: any) => {
   let result = transObjToSpec(
@@ -228,9 +329,17 @@ const handleSelectionChange = (val: Array<any>) => {
 }
 
 const handleAdd = (defaultForm: any) => {
+  let params: Record<string, unknown>
+  try {
+    params = defaultForm.params ? JSON.parse(defaultForm.params) ?? {} : {}
+    if (typeof params !== 'object' || Array.isArray(params)) throw new Error('invalid params')
+  } catch {
+    ElMessage.error('任务参数不是有效的 JSON 对象，请检查历史数据')
+    return
+  }
   submitForm.value = {
     ...defaultForm,
-    params: defaultForm.params ? JSON.parse(defaultForm.params) : {},
+    params,
     ...transSpecToObj(defaultForm.cron),
     max_concurrency: defaultForm.max_concurrency || 1
   }

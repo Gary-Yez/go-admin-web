@@ -28,7 +28,7 @@ go-admin 的公共前端包，包含系统页面、后台布局、菜单路由�
 | API 密钥 | 个人密钥及密钥管理页面 | 后端密钥接口与权限 |
 | 登录日志 | 登录记录查询与清理 | 对应菜单与 API 权限 |
 | 配置管理 | 按组编辑配置、校验、保存、恢复默认、缓存同步和无效项清理 | 类型与默认值由后端定义，可扩展配置布局 |
-| 计划任务 | 任务配置、参数、执行和日志页面 | 后端已注册处理函数 |
+| 计划任务 | 标量参数、动态多选、任务配置、执行和日志页面 | 后端注册处理函数及选项回调，角色具备接口权限 |
 | 节点监控 | 节点状态和资源指标展示 | 后端节点监控接口 |
 | 文件列表 | 普通/分片上传、进度、暂停续传、预览、下载和删除 | 后端文件模块、上传策略及启用的存储账号 |
 | 存储管理 | 本地、COS、OSS、S3 账号维护、启停与默认账号 | 存储管理权限；凭据仅由后端处理 |
@@ -227,6 +227,7 @@ export default {
 | 通用组件 | `ColumnTable`、`FormDialog`、`FormNote`、`PageHeader`、`TableTime`、`IconSelect` | 公共组件 |
 | 配置扩展 | `ConfigField`（组件）、`ConfigForm`、`ConfigLayout`、`ConfigLayoutProps`、`ConfigValue` | 自定义配置分组布局 |
 | 文件管理 | `FileUpload`、`SysFileApi`、`ManagedFile`、`UploadPolicy`、`UploadSession`、`StorageOption` | 文件上传、文件 API 与类型 |
+| 计划任务 | `SysCronJobApi`、`CronHandler`、`CronParam`、`CronParamType`、`CronParamOption` | 计划任务与动态多选参数 |
 | 样式子路径 | `@gary-yez/go-admin-web/style` | 副作用导入公共样式，不是函数或组件 |
 
 没有列入包根导出的 `SysAuthApi`、`SysStorageApi`、`FileQuery`、`formatFileSize`、`DeleteNotice`、`adminRuntime` 等属于内部实现。需要业务接口时在宿主 `src/apis/<module>.ts` 中调用公开 request，不复制内部模块或凭名称猜测导出。
@@ -730,6 +731,52 @@ const {data: cleaned} = await SysFileApi.Cleanup()
 | `StorageOption` | id: number；name: string；engine: 'local'/'tencent'/'aliyun'/'s3'；is_default、enabled: boolean | 仅账号选项，不含凭据 |
 
 前端类型体现当前响应结构，不构成可信输入校验。归属、权限、上传完成状态和文件内容仍由后端业务校验。
+
+### 计划任务与动态多选参数
+
+内置计划任务页面根据后端注册的参数定义渲染表单：`string` 使用文本框，`int` 使用数字输入，`bool` 使用开关，`array` 使用可搜索、可清空的多选框。数组的 `item_type` 为 `string`、`int` 或 `bool`，后端必须提供 `Options` 回调；业务不需要复制任务页面或增加分组专用前端接口。
+
+每次打开编辑表单或切换执行任务，页面重新获取当前数组参数的选项，显示加载状态；无选项时显示“暂无可选项”，请求失败显示错误及“重试”。切换任务会清空上一任务的参数；关闭表单、切换任务和重复请求会取消旧请求并忽略晚到的响应。
+
+已有值按原类型回填：有对应选项时显示名称，未出现在最新选项中的值显示“未在最新选项中找到（值）”，不会被自动删除；选项尚未加载成功时显示“已选值（值）”。空数据或加载失败不会清空已选值，也不会阻止类型正确的参数保存，业务在执行时校验数据有效性。必填数组至少选择一项，数组元素必须符合声明类型，整数数组使用 JavaScript 安全整数。
+
+#### 公开任务 API
+
+```ts
+import {SysCronJobApi} from '@gary-yez/go-admin-web'
+import type {CronHandler, CronParamOption} from '@gary-yez/go-admin-web'
+
+const handlers: Record<string, CronHandler> = (await SysCronJobApi.GetRegisteredHandler()).data
+const options: CronParamOption[] = (await SysCronJobApi.GetParamOptions('tg.group_task', 'group_ids')).data
+
+// 传入 params 对象，API 封装将其序列化为后端原有的 JSON 字符串。
+await SysCronJobApi.Create({
+  name: '分组定时任务',
+  handler_key: 'tg.group_task',
+  cron: '0 3 * * *',
+  enable: true,
+  params: {group_ids: [1, 3, 8], concurrency: 5},
+})
+```
+
+例中的处理函数及分组需先由业务注册。分组名称来自 `options[].label`，保存的是 `options[].value`；整数 ID 不转换成字符串。实际项目按需使用示例变量。
+
+| 方法 | 参数与返回 |
+| --- | --- |
+| `GetRegisteredHandler()` | 返回 Promise，`data` 为 `Record<string, CronHandler>` |
+| `GetParamOptions(handlerKey, paramKey, signal?)` | 两个 key 为 string，signal 为可选 AbortSignal；返回 Promise，`data` 为 `CronParamOption[]` |
+| `List(query)`、`GetLogs(query)` | query 沿用框架分页/过滤/排序结构；返回 `data.list`、`data.total` |
+| `Create(form)`、`Edit(form)` | form 为任务字段对象，params 传对象；Edit 还需 id；返回标准业务响应，data 为任务记录 |
+| `Delete(ids)` | ids 为 number[]，返回标准业务响应 |
+
+| 类型 | 字段 |
+| --- | --- |
+| `CronParamType` | `'string' \| 'int' \| 'bool' \| 'array'` |
+| `CronHandler` | name: string；params: CronParam[] \| null |
+| `CronParam` | name、key、description: string；type: CronParamType；required: boolean；item_type?: `'string' \| 'int' \| 'bool'` |
+| `CronParamOption` | label: string；value: string \| number \| boolean |
+
+选项接口为 `GET /sys_cron_job/get_param_options`，查询参数是 `handler_key` 和 `param_key`，复用 request 的认证与错误处理。普通角色需要获授此新接口权限。后端返回空数组表示没有候选项；请求失败会拒绝 Promise。其他任务 API 继续使用现有路径与 params JSON 字符串保存协议，无需迁移历史任务。后端注册完整示例见 [go-admin 的计划任务文档](https://github.com/Gary-Yez/go-admin#注册计划任务处理函数)。
 
 ## 5. 使用注意事项与升级
 
